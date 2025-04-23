@@ -1,3 +1,4 @@
+use anyhow::Result;
 use ignore::WalkBuilder;
 use infer::Infer;
 use std::path::{Path, PathBuf};
@@ -28,14 +29,14 @@ impl TraverseResult {
         self.file_path
             .file_name()
             .and_then(|n| n.to_str())
-            .map_or(false, |name| name.starts_with("."))
+            .is_some_and(|name| name.starts_with("."))
     }
 }
 
 pub fn traverse_directory(
     directory: &Path,
     options: &TraverseOptions,
-) -> Result<Vec<TraverseResult>, String> {
+) -> Result<Vec<TraverseResult>> {
     let mut results = Vec::new();
     let infer = Infer::new();
 

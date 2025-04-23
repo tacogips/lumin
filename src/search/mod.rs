@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
@@ -29,7 +30,7 @@ pub fn search_files(
     pattern: &str,
     directory: &Path,
     options: &SearchOptions,
-) -> Result<Vec<SearchResult>, String> {
+) -> Result<Vec<SearchResult>> {
     // Create the matcher with the appropriate case sensitivity
     let matcher = if options.case_sensitive {
         RegexMatcher::new(pattern)
@@ -37,11 +38,11 @@ pub fn search_files(
         // For case insensitive search, we add the case-insensitive flag to the regex
         RegexMatcher::new(&format!("(?i){}", pattern))
     }
-    .map_err(|e| format!("Failed to create matcher: {}", e))?;
+    .context("Failed to create regular expression matcher")?;
 
     // Build the list of files to search
-    let files =
-        collect_files(directory, options).map_err(|e| format!("Failed to collect files: {}", e))?;
+    let files = collect_files(directory, options)
+        .context("Failed to collect files for searching")?;
 
     let mut results = Vec::new();
 
@@ -71,7 +72,7 @@ pub fn search_files(
                     Ok(true)
                 }),
             )
-            .map_err(|e| format!("Error searching file {}: {}", file_path.display(), e))?;
+            .with_context(|| format!("Error searching file {}", file_path.display()))?;
 
         // Process the matches
         for (line_number, content) in matches {
@@ -89,7 +90,7 @@ pub fn search_files(
 fn collect_files(
     directory: &Path,
     options: &SearchOptions,
-) -> Result<Vec<PathBuf>, std::io::Error> {
+) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
     let mut builder = WalkBuilder::new(directory);

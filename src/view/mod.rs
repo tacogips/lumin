@@ -1,5 +1,6 @@
+use anyhow::{anyhow, Context, Result};
 use infer::Infer;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -16,25 +17,25 @@ impl Default for ViewOptions {
     }
 }
 
-pub fn view_file(path: &Path, options: &ViewOptions) -> Result<Value, String> {
+pub fn view_file(path: &Path, options: &ViewOptions) -> Result<Value> {
     // Check if file exists and is a file
     if !path.exists() {
-        return Err(format!("File not found: {}", path.display()));
+        return Err(anyhow!("File not found: {}", path.display()));
     }
 
     if !path.is_file() {
-        return Err(format!("Not a file: {}", path.display()));
+        return Err(anyhow!("Not a file: {}", path.display()));
     }
 
     // Get file metadata
     let metadata = path
         .metadata()
-        .map_err(|e| format!("Failed to read file metadata: {}", e))?;
+        .with_context(|| format!("Failed to read file metadata for {}", path.display()))?;
 
     // Check file size if a limit is set
     if let Some(max_size) = options.max_size {
         if metadata.len() > max_size as u64 {
-            return Err(format!(
+            return Err(anyhow!(
                 "File is too large: {} (size: {}, limit: {})",
                 path.display(),
                 metadata.len(),
@@ -48,15 +49,16 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<Value, String> {
     let file_type = match infer.get_from_path(path) {
         Ok(Some(kind)) => kind.mime_type().to_string(),
         Ok(None) => "text/plain".to_string(), // Default to text if can't determine
-        Err(e) => return Err(format!("Failed to determine file type: {}", e)),
+        Err(e) => return Err(anyhow!("Failed to determine file type: {}", e)),
     };
 
     // Read file content
-    let mut file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
+    let mut file = File::open(path)
+        .with_context(|| format!("Failed to open file {}", path.display()))?;
 
     let mut content = Vec::new();
     file.read_to_end(&mut content)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+        .with_context(|| format!("Failed to read file {}", path.display()))?;
 
     // For binary files, return base64 encoding, for text files return as string
     let contents = if file_type.starts_with("text/") {
