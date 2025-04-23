@@ -4,12 +4,16 @@
 //! with various filtering options including gitignore support and file type detection.
 
 use anyhow::Result;
-use ignore::WalkBuilder;
 use infer::Infer;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+// Common utilities for traverse and tree operations
+pub mod common;
+use common::{build_walk, is_hidden_path};
+
 /// Configuration options for directory traversal operations.
+#[derive(Debug, Clone)]
 pub struct TraverseOptions {
     /// Whether file path matching should be case sensitive
     pub case_sensitive: bool,
@@ -48,21 +52,7 @@ impl TraverseResult {
     ///
     /// `true` if the file is hidden, `false` otherwise
     pub fn is_hidden(&self) -> bool {
-        // Check if the file name starts with a dot
-        let file_is_hidden = self
-            .file_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(|name| name.starts_with("."));
-
-        // Also check if the file is in a hidden directory
-        let path_contains_hidden_dir = self
-            .file_path
-            .to_string_lossy()
-            .split('/')
-            .any(|part| part.starts_with(".") && !part.is_empty());
-
-        file_is_hidden || path_contains_hidden_dir
+        is_hidden_path(&self.file_path)
     }
 }
 
@@ -87,23 +77,15 @@ pub fn traverse_directory(
     let mut results = Vec::new();
     let infer = Infer::new();
 
-    // Configure the file traversal
-    let mut builder = WalkBuilder::new(directory);
-    builder.git_ignore(options.respect_gitignore);
-    // When respecting gitignore, hidden files are skipped; otherwise they're included
-    builder.hidden(options.respect_gitignore);
-    if !options.case_sensitive {
-        builder.ignore_case_insensitive(true);
-    }
-    // Additional settings to ensure we fully respect/ignore gitignore as needed
-    if !options.respect_gitignore {
-        builder.ignore(false); // Turn off all ignore logic
-        builder.git_exclude(false); // Don't use git exclude files
-        builder.git_global(false); // Don't use global git ignore
-    }
+    // Use the common walker builder
+    let walker = build_walk(
+        directory, 
+        options.respect_gitignore, 
+        options.case_sensitive
+    )?;
 
     // Walk the directory
-    for result in builder.build() {
+    for result in walker {
         match result {
             Ok(entry) => {
                 let path = entry.path();

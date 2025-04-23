@@ -216,6 +216,34 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### 2025-04-23: Added Directory Tree Structure Functionality
+- Implemented a new `tree` module for displaying directory structures hierarchically
+- Features:
+  - Structured JSON output with directories and their contents
+  - Support for the same filtering options as traverse (gitignore, case sensitivity, file type)
+  - Clear organization of files and directories in a hierarchical layout
+- Implementation details:
+  - Refactored common code from traverse into a shared `common` module
+  - Created specialized traversal algorithm that builds the tree structure
+  - Developed proper handling for nested directories
+  - Added comprehensive tests for all features
+- Technical decisions:
+  - Used HashMap to build the tree efficiently before final serialization
+  - Implemented specialized filtering to handle binary files
+  - Created consistent entry types through a tagged enum structure
+
+### 2025-04-23: Refactored Traverse Module
+- Extracted common functionality from traverse into a shared `common` module
+- Benefits:
+  - Reduced code duplication between traverse and tree modules
+  - Better separation of concerns
+  - Improved maintainability
+  - More consistent behavior across similar operations
+- Updates:
+  - Enhanced file type detection
+  - Improved filtering mechanisms
+  - Updated tests to ensure consistency
+
 ### 2025-04-23: Refactored View Module to Use Type-Safe Structures
 - Replaced dynamic JSON construction with strongly typed enum-based structure
 - Created dedicated types for different content categories:

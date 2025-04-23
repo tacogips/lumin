@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use lumin::search::{SearchOptions, search_files};
 use lumin::traverse::{TraverseOptions, traverse_directory};
+use lumin::tree::{TreeOptions, generate_tree};
 use lumin::view::{ViewOptions, view_file};
 use std::path::PathBuf;
 
@@ -40,6 +41,24 @@ enum Commands {
         /// Directory to traverse
         directory: PathBuf,
 
+        /// Case sensitive matching
+        #[arg(long)]
+        case_sensitive: bool,
+
+        /// Ignore gitignore files
+        #[arg(long)]
+        no_ignore: bool,
+
+        /// Include binary files
+        #[arg(long)]
+        include_binary: bool,
+    },
+
+    /// Display directory structure as a tree
+    Tree {
+        /// Directory to display as tree
+        directory: PathBuf,
+        
         /// Case sensitive matching
         #[arg(long)]
         case_sensitive: bool,
@@ -123,6 +142,28 @@ fn main() -> Result<()> {
                         result.file_path.display()
                     );
                 }
+            }
+        }
+
+        Commands::Tree {
+            directory,
+            case_sensitive,
+            no_ignore,
+            include_binary,
+        } => {
+            let options = TreeOptions {
+                case_sensitive: *case_sensitive,
+                respect_gitignore: !no_ignore,
+                only_text_files: !include_binary,
+            };
+
+            let results = generate_tree(directory, &options)?;
+
+            if results.is_empty() {
+                println!("No directories found.");
+            } else {
+                // Output as JSON
+                println!("{}", serde_json::to_string_pretty(&results)?);
             }
         }
 

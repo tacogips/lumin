@@ -26,6 +26,37 @@ This library provides functionality for searching and displaying local files.
 
 - By default, the library uses the `infer` crate and only returns files that cannot be parsed by this crate (identifying them as text files). This filtering behavior can be toggled via parameters.
 
+### Directory Tree Structure
+
+- Built on top of the traversal functionality
+- Logic is defined in the `tree` package.
+
+- Provides a hierarchical view of directory structures with files and subdirectories
+- Respects the same filtering options as the traverse functionality:
+  - gitignore respect can be toggled
+  - case sensitivity can be toggled
+  - text-only filtering can be toggled
+
+- The output is a structured JSON representation of the directory tree:
+
+```json
+[
+  {
+    "dir": "path/to/directory",
+    "entries": [
+      { "type": "file", "name": "file1.txt" },
+      { "type": "directory", "name": "subdir" }
+    ]
+  },
+  {
+    "dir": "path/to/directory/subdir",
+    "entries": [
+      { "type": "file", "name": "file2.md" }
+    ]
+  }
+]
+```
+
 ### File Viewing
 
 A function is defined to display file contents when given a file path.
@@ -63,6 +94,15 @@ When serialized to JSON, the output looks like:
   }
 }
 ```
+
+## Common Features Across Modules
+
+All modules share these common features:
+
+- Option to respect or ignore gitignore files
+- Case sensitivity options for file matching
+- Ability to filter binary files when needed
+- Structured output formats with rich metadata
 
 ## Technical Implementation
 

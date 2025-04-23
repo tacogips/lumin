@@ -59,3 +59,15 @@ After implementing significant changes:
 4. Follow the instructions at the top of devlog.md for proper documentation format
 
 When asked to "update devlog.md", proceed directly to editing the file following the guidelines contained within it. This ensures that design decisions and implementation details are properly documented for future reference.
+
+IMPORTANT: Always update devlog.md after making significant changes to the codebase, especially when:
+- Adding new features or modules
+- Refactoring existing code
+- Making architectural changes
+- Implementing new functionality
+
+The devlog update should include:
+- A summary of what was changed or added
+- Any design decisions that were made
+- Implementation challenges and solutions
+- Tests that were added or modified
