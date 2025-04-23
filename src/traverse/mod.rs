@@ -21,7 +21,15 @@ impl Default for TraverseOptions {
 pub struct TraverseResult {
     pub file_path: PathBuf,
     pub file_type: String,
-    pub is_hidden: bool,
+}
+
+impl TraverseResult {
+    pub fn is_hidden(&self) -> bool {
+        self.file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .map_or(false, |name| name.starts_with("."))
+    }
 }
 
 pub fn traverse_directory(
@@ -64,10 +72,6 @@ pub fn traverse_directory(
                     };
 
                     if include {
-                        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-
-                        let is_hidden = file_name.starts_with(".");
-
                         // Get file type (simplified)
                         let file_type = if let Some(ext) = path.extension().and_then(|e| e.to_str())
                         {
@@ -79,7 +83,6 @@ pub fn traverse_directory(
                         results.push(TraverseResult {
                             file_path: path.to_path_buf(),
                             file_type,
-                            is_hidden,
                         });
                     }
                 }
