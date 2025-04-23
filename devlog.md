@@ -216,11 +216,23 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### 2025-04-23: Removed Binary Filtering from Tree Module
+- Simplified the tree functionality by removing binary file filtering
+- Changes:
+  - Removed `only_text_files` option from `TreeOptions`
+  - Removed `include_binary` parameter from CLI tree command
+  - Removed `is_text_file` helper function
+  - Simplified tree generation logic
+- Benefits:
+  - More consistent behavior with all files included in tree output
+  - Less complexity in the tree generation code
+  - Faster tree generation without file type detection overhead
+
 ### 2025-04-23: Added Directory Tree Structure Functionality
 - Implemented a new `tree` module for displaying directory structures hierarchically
 - Features:
   - Structured JSON output with directories and their contents
-  - Support for the same filtering options as traverse (gitignore, case sensitivity, file type)
+  - Support for filtering options: gitignore respect and case sensitivity
   - Clear organization of files and directories in a hierarchical layout
 - Implementation details:
   - Refactored common code from traverse into a shared `common` module
@@ -229,7 +241,6 @@ This document describes the implementation of the lumin utility, focusing on des
   - Added comprehensive tests for all features
 - Technical decisions:
   - Used HashMap to build the tree efficiently before final serialization
-  - Implemented specialized filtering to handle binary files
   - Created consistent entry types through a tagged enum structure
 
 ### 2025-04-23: Refactored Traverse Module

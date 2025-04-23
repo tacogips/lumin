@@ -58,7 +58,7 @@ enum Commands {
     Tree {
         /// Directory to display as tree
         directory: PathBuf,
-        
+
         /// Case sensitive matching
         #[arg(long)]
         case_sensitive: bool,
@@ -66,10 +66,6 @@ enum Commands {
         /// Ignore gitignore files
         #[arg(long)]
         no_ignore: bool,
-
-        /// Include binary files
-        #[arg(long)]
-        include_binary: bool,
     },
 
     /// View file contents
@@ -149,12 +145,10 @@ fn main() -> Result<()> {
             directory,
             case_sensitive,
             no_ignore,
-            include_binary,
         } => {
             let options = TreeOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
-                only_text_files: !include_binary,
             };
 
             let results = generate_tree(directory, &options)?;

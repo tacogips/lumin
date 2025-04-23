@@ -32,10 +32,9 @@ This library provides functionality for searching and displaying local files.
 - Logic is defined in the `tree` package.
 
 - Provides a hierarchical view of directory structures with files and subdirectories
-- Respects the same filtering options as the traverse functionality:
+- Respects filtering options:
   - gitignore respect can be toggled
   - case sensitivity can be toggled
-  - text-only filtering can be toggled
 
 - The output is a structured JSON representation of the directory tree:
 
@@ -101,7 +100,6 @@ All modules share these common features:
 
 - Option to respect or ignore gitignore files
 - Case sensitivity options for file matching
-- Ability to filter binary files when needed
 - Structured output formats with rich metadata
 
 ## Technical Implementation
