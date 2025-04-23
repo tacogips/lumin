@@ -23,34 +23,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Add type annotations for public functions/methods
 - Match arms should be aligned
 - Use Rust's ownership system effectively (avoid unnecessary clones)
+- Actively use cargo-docs (mcp) to investigate crate usage patterns
 
-## このライブラリの機能
+## Library Features
 
-ローカルファイルの検索と内容の表示を行います。
+This library provides functionality for searching and displaying local files.
 
-### fileの検索
+### File Searching
 
-- `search` package内にロジックが定義してあります。
-  検索対象directoryを指定することでそのdirectory以下のfileをgrepします
-  検索対象directoryに .gitignore がある場合はそこに記述されているfileは除外しますが、関数に渡すparameterで除外しないようにもします。
-- その他ignore caseするかどうかをパラメータで切り替えられます
+- Logic is defined in the `search` package.
+  Specify a target directory to grep through files under that directory.
+  Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
+- Case sensitivity can be toggled via parameters.
 
-### fileのtraverse
+### File Traversal
 
-- `traverse` package内にロジックが定義してあります
+- Logic is defined in the `traverse` package.
 
-- 検索対象directoryを指定することでそのdirectory以下のfile名を検索します。
-  検索対象directoryに .gitignore がある場合はそこに記述されているfileは除外しますが、関数に渡すparameterで除外しないようにもします。
+- Specify a target directory to search for file names under that directory.
+  Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
 
-- その他ignore caseするかどうかをパラメータで切り替えられます
+- Case sensitivity can be toggled via parameters.
 
-- defaultの挙動として、infer crateを使用し、このcrateでparseできないfileはtext fileであると判定し、そのtext fileのみを返します。この除外を許可するかどうかをパラメータで切り替えられます。
+- By default, the library uses the `infer` crate and only returns files that cannot be parsed by this crate (identifying them as text files). This filtering behavior can be toggled via parameters.
 
-### fileのview
+### File Viewing
 
-file pathを指定し内容を表示する関数が定義してあります。
+A function is defined to display file contents when given a file path.
 
-関数の戻り値は下記です
+The function returns the following:
 
 ```json
 {
