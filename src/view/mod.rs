@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use infer::Infer;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -16,8 +16,15 @@ impl Default for ViewOptions {
         }
     }
 }
+// Construct the result as a struct, then serialize to JSON
+#[derive(serde::Serialize)]
+pub struct FileView {
+    file_path: std::path::PathBuf,
+    file_type: String,
+    contents: Value,
+}
 
-pub fn view_file(path: &Path, options: &ViewOptions) -> Result<Value> {
+pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
     // Check if file exists and is a file
     if !path.exists() {
         return Err(anyhow!("File not found: {}", path.display()));
@@ -53,8 +60,8 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<Value> {
     };
 
     // Read file content
-    let mut file = File::open(path)
-        .with_context(|| format!("Failed to open file {}", path.display()))?;
+    let mut file =
+        File::open(path).with_context(|| format!("Failed to open file {}", path.display()))?;
 
     let mut content = Vec::new();
     file.read_to_end(&mut content)
@@ -77,12 +84,11 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<Value> {
         ))
     };
 
-    // Construct the result as JSON
-    let result = json!({
-        "file_path": path.to_string_lossy(),
-        "file_type": file_type,
-        "contents": contents
-    });
+    let result = FileView {
+        file_path: path.to_path_buf(),
+        file_type,
+        contents,
+    };
 
     Ok(result)
 }
