@@ -4,6 +4,7 @@
 //! with various filtering options including gitignore support and file type detection.
 
 use anyhow::Result;
+use globset::{Glob, GlobBuilder, GlobSetBuilder};
 use infer::Infer;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -17,12 +18,15 @@ use common::{build_walk, is_hidden_path};
 pub struct TraverseOptions {
     /// Whether file path matching should be case sensitive
     pub case_sensitive: bool,
-    
+
     /// Whether to respect .gitignore files when determining which files to include
     pub respect_gitignore: bool,
-    
+
     /// Whether to only return text files (filtering out binary files)
     pub only_text_files: bool,
+
+    /// Optional pattern to filter files by path
+    pub pattern: Option<String>,
 }
 
 impl Default for TraverseOptions {
@@ -31,6 +35,7 @@ impl Default for TraverseOptions {
             case_sensitive: false,
             respect_gitignore: true,
             only_text_files: true,
+            pattern: None,
         }
     }
 }
@@ -40,7 +45,7 @@ impl Default for TraverseOptions {
 pub struct TraverseResult {
     /// Path to the file
     pub file_path: PathBuf,
-    
+
     /// The detected or inferred file type (typically the file extension)
     pub file_type: String,
 }
@@ -78,11 +83,23 @@ pub fn traverse_directory(
     let infer = Infer::new();
 
     // Use the common walker builder
-    let walker = build_walk(
-        directory, 
-        options.respect_gitignore, 
-        options.case_sensitive
-    )?;
+    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive)?;
+
+    // Set up glob pattern if provided
+    let pattern_matcher = if let Some(pattern) = &options.pattern {
+        let mut builder = GlobSetBuilder::new();
+        let glob = if options.case_sensitive {
+            // Case sensitive matching
+            Glob::new(pattern)?
+        } else {
+            // Case insensitive matching
+            GlobBuilder::new(pattern).case_insensitive(true).build()?
+        };
+        builder.add(glob);
+        Some(builder.build()?)
+    } else {
+        None
+    };
 
     // Walk the directory
     for result in walker {
@@ -90,7 +107,21 @@ pub fn traverse_directory(
             Ok(entry) => {
                 let path = entry.path();
                 if path.is_file() {
-                    // Check if we should include this file
+                    // Check if the path matches the pattern if one is provided
+                    let matches_pattern = if let Some(matcher) = &pattern_matcher {
+                        // Get a relative path from the directory for matching
+                        let rel_path = path.strip_prefix(directory).unwrap_or(path);
+                        matcher.is_match(rel_path)
+                    } else {
+                        true // Include all files if no pattern is specified
+                    };
+
+                    // Only proceed if the file matches the pattern
+                    if !matches_pattern {
+                        continue;
+                    }
+
+                    // Check if we should include this file based on text/binary filter
                     let include = if options.only_text_files {
                         // Read a small amount of the file to determine its type
                         match std::fs::read(path) {

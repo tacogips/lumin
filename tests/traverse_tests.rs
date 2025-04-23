@@ -208,4 +208,47 @@ mod traverse_tests {
 
         Ok(())
     }
+
+    /// Test traversal with pattern matching
+    #[test]
+    #[serial]
+    fn test_traverse_with_pattern() -> Result<()> {
+        let _env = TestEnvironment::setup()?;
+
+        // Test with glob pattern matching .rs files
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("**/*.rs".to_string());
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should find Rust files only
+        assert!(!results.is_empty());
+        assert!(results.iter().all(|r| r.file_type == "rs"));
+
+        // Test with glob pattern matching .md files
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("**/*.md".to_string());
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should find Markdown files only
+        assert!(!results.is_empty());
+        assert!(results.iter().all(|r| r.file_type == "md"));
+
+        // Test with glob pattern matching files in specific directory
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("**/docs/**".to_string());
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should find files only in docs directory
+        assert!(!results.is_empty());
+        assert!(
+            results
+                .iter()
+                .all(|r| r.file_path.to_string_lossy().contains("/docs/"))
+        );
+
+        Ok(())
+    }
 }

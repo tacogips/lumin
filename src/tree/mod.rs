@@ -1,8 +1,3 @@
-//! Directory tree structure visualization functionality.
-//!
-//! This module provides tools to display directory structures in a hierarchical tree format,
-//! with support for various filtering options including gitignore respect and file type detection.
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

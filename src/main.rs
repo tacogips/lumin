@@ -41,6 +41,9 @@ enum Commands {
         /// Directory to traverse
         directory: PathBuf,
 
+        /// Pattern to filter files (optional)
+        pattern: Option<String>,
+
         /// Case sensitive matching
         #[arg(long)]
         case_sensitive: bool,
@@ -113,6 +116,7 @@ fn main() -> Result<()> {
 
         Commands::Traverse {
             directory,
+            pattern,
             case_sensitive,
             no_ignore,
             include_binary,
@@ -121,6 +125,7 @@ fn main() -> Result<()> {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 only_text_files: !include_binary,
+                pattern: pattern.clone(),
             };
 
             let results = traverse_directory(directory, &options)?;

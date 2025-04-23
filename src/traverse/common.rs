@@ -40,7 +40,7 @@ pub fn build_walk(
         builder.git_exclude(false); // Don't use git exclude files
         builder.git_global(false); // Don't use global git ignore
     }
-    
+
     Ok(builder.build())
 }
 

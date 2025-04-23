@@ -43,7 +43,7 @@ pub enum FileContents {
         /// Metadata about the text content
         metadata: TextMetadata,
     },
-    
+
     /// Binary file representation with a descriptive message
     #[serde(rename = "binary")]
     Binary {
@@ -52,7 +52,7 @@ pub enum FileContents {
         /// Metadata about the binary file
         metadata: BinaryMetadata,
     },
-    
+
     /// Image file representation with a descriptive message
     #[serde(rename = "image")]
     Image {

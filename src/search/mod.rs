@@ -18,7 +18,7 @@ pub struct SearchOptions {
     /// Whether the search should be case sensitive.
     /// When false, matches will be found regardless of letter case.
     pub case_sensitive: bool,
-    
+
     /// Whether to respect .gitignore files when determining which files to search.
     /// When true, files listed in .gitignore will be excluded from the search.
     pub respect_gitignore: bool,
@@ -38,10 +38,10 @@ impl Default for SearchOptions {
 pub struct SearchResult {
     /// Path to the file containing the match
     pub file_path: PathBuf,
-    
+
     /// Line number where the match was found (1-based)
     pub line_number: u64,
-    
+
     /// Content of the line containing the match
     pub line_content: String,
 }
