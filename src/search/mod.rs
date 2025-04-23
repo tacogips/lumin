@@ -1,3 +1,9 @@
+//! File content searching functionality using regex patterns.
+//!
+//! This module provides tools to search for text patterns in files
+//! within a specified directory, with options for case sensitivity
+//! and gitignore handling.
+
 use anyhow::{Context, Result};
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
@@ -7,8 +13,14 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
+/// Configuration options for file search operations.
 pub struct SearchOptions {
+    /// Whether the search should be case sensitive.
+    /// When false, matches will be found regardless of letter case.
     pub case_sensitive: bool,
+    
+    /// Whether to respect .gitignore files when determining which files to search.
+    /// When true, files listed in .gitignore will be excluded from the search.
     pub respect_gitignore: bool,
 }
 
@@ -21,13 +33,38 @@ impl Default for SearchOptions {
     }
 }
 
+/// Represents a single search match result.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SearchResult {
+    /// Path to the file containing the match
     pub file_path: PathBuf,
+    
+    /// Line number where the match was found (1-based)
     pub line_number: u64,
+    
+    /// Content of the line containing the match
     pub line_content: String,
 }
 
+/// Searches for the specified regex pattern in files within the given directory.
+///
+/// # Arguments
+///
+/// * `pattern` - The regular expression pattern to search for
+/// * `directory` - The directory path to search in
+/// * `options` - Configuration options for the search operation
+///
+/// # Returns
+///
+/// A vector of search results, each containing the file path, line number, and line content
+/// where a match was found.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The regex pattern is invalid
+/// - There's an issue accessing the directory or files
+/// - The search operation fails
 pub fn search_files(
     pattern: &str,
     directory: &Path,
@@ -89,6 +126,22 @@ pub fn search_files(
     Ok(results)
 }
 
+/// Collects a list of files within the given directory that should be included in the search.
+///
+/// This function applies gitignore filtering based on the provided options.
+///
+/// # Arguments
+///
+/// * `directory` - The directory path to collect files from
+/// * `options` - Configuration options that affect which files are included
+///
+/// # Returns
+///
+/// A vector of file paths to be searched
+///
+/// # Errors
+///
+/// Returns an error if there's an issue accessing the directory or files
 fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 

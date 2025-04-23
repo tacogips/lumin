@@ -1,3 +1,8 @@
+//! File content viewing with type detection and formatting.
+//!
+//! This module provides tools to view file contents with automatic type detection,
+//! handling different file types (text, binary, image) appropriately with metadata.
+
 use anyhow::{Context, Result, anyhow};
 use infer::Infer;
 use serde::{Deserialize, Serialize};
@@ -5,7 +10,11 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+/// Configuration options for file viewing operations.
 pub struct ViewOptions {
+    /// Maximum file size to read in bytes.
+    /// Files larger than this will be rejected to prevent excessive memory usage.
+    /// A value of None means no limit.
     pub max_size: Option<usize>,
 }
 
@@ -16,55 +25,104 @@ impl Default for ViewOptions {
         }
     }
 }
-// Content type definitions for various file types
+
+/// Represents the contents of a file with type-specific information.
+///
+/// This enum has different variants based on the detected file type:
+/// - `Text` for text files with content and metadata
+/// - `Binary` for binary files with a description message and metadata
+/// - `Image` for image files with a description message and metadata
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum FileContents {
+    /// Text file contents with the actual content and metadata
     #[serde(rename = "text")]
     Text {
+        /// The actual text content of the file
         content: String,
+        /// Metadata about the text content
         metadata: TextMetadata,
     },
+    
+    /// Binary file representation with a descriptive message
     #[serde(rename = "binary")]
     Binary {
+        /// A descriptive message about the binary file
         message: String,
+        /// Metadata about the binary file
         metadata: BinaryMetadata,
     },
+    
+    /// Image file representation with a descriptive message
     #[serde(rename = "image")]
     Image {
+        /// A descriptive message about the image file
         message: String,
+        /// Metadata about the image file
         metadata: ImageMetadata,
     },
 }
 
+/// Metadata for text files.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TextMetadata {
+    /// Number of lines in the text file
     pub line_count: usize,
+    /// Number of characters in the text file
     pub char_count: usize,
 }
 
+/// Metadata for binary files.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BinaryMetadata {
+    /// Whether the file is binary (always true for this struct)
     pub binary: bool,
+    /// Size of the file in bytes
     pub size_bytes: u64,
+    /// MIME type of the file, if it could be determined
     pub mime_type: Option<String>,
 }
 
+/// Metadata for image files.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImageMetadata {
+    /// Whether the file is binary (always true for images)
     pub binary: bool,
+    /// Size of the image file in bytes
     pub size_bytes: u64,
+    /// Media type descriptor (typically "image")
     pub media_type: String,
 }
 
-// Main result structure for file viewing
+/// Main result structure for file viewing, containing the file path, type, and contents.
 #[derive(Serialize, Debug)]
 pub struct FileView {
+    /// Path to the viewed file
     pub file_path: PathBuf,
+    /// MIME type or file type descriptor
     pub file_type: String,
+    /// The contents of the file, represented as an appropriate variant of FileContents
     pub contents: FileContents,
 }
 
+/// Reads and processes a file, detecting its type and returning an appropriate representation.
+///
+/// # Arguments
+///
+/// * `path` - Path to the file to view
+/// * `options` - Configuration options for the viewing operation
+///
+/// # Returns
+///
+/// A FileView struct containing the file path, detected type, and contents with metadata
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The file does not exist or is not a regular file
+/// - The file is larger than the maximum size specified in options
+/// - Failed to read file metadata or content
+/// - Failed to determine the file type
 pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
     // Check if file exists and is a file
     if !path.exists() {

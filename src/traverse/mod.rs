@@ -1,12 +1,23 @@
+//! Directory traversal and file listing functionality.
+//!
+//! This module provides tools to traverse directory structures and list files
+//! with various filtering options including gitignore support and file type detection.
+
 use anyhow::Result;
 use ignore::WalkBuilder;
 use infer::Infer;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+/// Configuration options for directory traversal operations.
 pub struct TraverseOptions {
+    /// Whether file path matching should be case sensitive
     pub case_sensitive: bool,
+    
+    /// Whether to respect .gitignore files when determining which files to include
     pub respect_gitignore: bool,
+    
+    /// Whether to only return text files (filtering out binary files)
     pub only_text_files: bool,
 }
 
@@ -20,13 +31,22 @@ impl Default for TraverseOptions {
     }
 }
 
+/// Represents a single file found during directory traversal.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TraverseResult {
+    /// Path to the file
     pub file_path: PathBuf,
+    
+    /// The detected or inferred file type (typically the file extension)
     pub file_type: String,
 }
 
 impl TraverseResult {
+    /// Determines if a file is hidden (starts with a dot or is in a hidden directory).
+    ///
+    /// # Returns
+    ///
+    /// `true` if the file is hidden, `false` otherwise
     pub fn is_hidden(&self) -> bool {
         // Check if the file name starts with a dot
         let file_is_hidden = self
@@ -46,6 +66,20 @@ impl TraverseResult {
     }
 }
 
+/// Traverses the specified directory and returns a list of files matching the given criteria.
+///
+/// # Arguments
+///
+/// * `directory` - The directory path to traverse
+/// * `options` - Configuration options for the traversal operation
+///
+/// # Returns
+///
+/// A vector of traverse results, each containing the file path and type information
+///
+/// # Errors
+///
+/// Returns an error if there's an issue accessing the directory or files
 pub fn traverse_directory(
     directory: &Path,
     options: &TraverseOptions,
