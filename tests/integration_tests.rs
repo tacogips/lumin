@@ -8,7 +8,7 @@ use std::path::Path;
 mod test_helpers;
 use test_helpers::{TEST_DIR, TestEnvironment};
 
-/// Integration tests for the file-searcher library
+/// Integration tests for the lumin library
 #[cfg(test)]
 mod integration_tests {
     use super::*;

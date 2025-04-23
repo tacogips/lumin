@@ -1,6 +1,6 @@
 # Test Documentation
 
-This is a sample Markdown file for testing the file-searcher utility.
+This is a sample Markdown file for testing the lumin utility.
 
 ## Features
 
@@ -11,13 +11,13 @@ This is a sample Markdown file for testing the file-searcher utility.
 ## Installation
 
 ```bash
-cargo install file-searcher
+cargo install lumin
 ```
 
 ## Usage
 
 ```bash
-file-searcher search "pattern" /path/to/dir
-file-searcher traverse /path/to/dir
-file-searcher view /path/to/file
+lumin search "pattern" /path/to/dir
+lumin traverse /path/to/dir
+lumin view /path/to/file
 ```

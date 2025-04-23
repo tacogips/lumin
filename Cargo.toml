@@ -1,5 +1,5 @@
 [package]
-name = "file-searcher"
+name = "lumin"
 version = "0.1.0"
 edition = "2024"
 

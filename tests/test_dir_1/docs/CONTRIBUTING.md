@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Thank you for considering contributing to file-searcher!
+Thank you for considering contributing to lumin!
 
 ## Development
 

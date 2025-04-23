@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Setup script for testing file-searcher
+Setup script for testing lumin
 """
 
 import os

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Data processing script for testing file-searcher
+Data processing script for testing lumin
 """
 
 import os

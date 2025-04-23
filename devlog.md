@@ -2,7 +2,7 @@
 
 ## Purpose of this Document
 
-This development log (devlog.md) serves as a comprehensive record of design decisions, implementation details, challenges faced, and solutions applied during the development of the file-searcher utility. 
+This development log (devlog.md) serves as a comprehensive record of design decisions, implementation details, challenges faced, and solutions applied during the development of the lumin utility. 
 
 This document should be updated whenever significant changes are made to the codebase. It acts as both documentation and knowledge transfer for future developers or AI agents working on this project.
 
@@ -22,7 +22,7 @@ When asked to "update devlog.md", AI agents should:
 
 ## Implementation Summary
 
-This document describes the implementation of the file-searcher utility, focusing on design decisions, challenges encountered, and solutions applied.
+This document describes the implementation of the lumin utility, focusing on design decisions, challenges encountered, and solutions applied.
 
 ## Core Features
 
