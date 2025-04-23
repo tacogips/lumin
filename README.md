@@ -1,4 +1,4 @@
-# File Searcher
+# lumin: A File Searcher
 
 A Rust utility for searching, traversing, and viewing files with rich filtering options and type-aware content handling.
 
@@ -23,6 +23,7 @@ lumin search <PATTERN> <DIRECTORY> [OPTIONS]
 ```
 
 Options:
+
 - `--case-sensitive`: Enable case-sensitive matching
 - `--ignore-gitignore`: Ignore .gitignore rules
 
@@ -33,6 +34,7 @@ lumin traverse <DIRECTORY> [OPTIONS]
 ```
 
 Options:
+
 - `--case-sensitive`: Enable case-sensitive filtering
 - `--ignore-gitignore`: Ignore .gitignore rules
 - `--all-files`: Include binary files (default: text files only)
@@ -44,8 +46,9 @@ lumin view <FILE_PATH> [OPTIONS]
 ```
 
 The view command outputs a structured JSON with:
+
 - File path
-- File type 
+- File type
 - Contents (text, binary, or image with appropriate metadata)
 
 ## Key Features
