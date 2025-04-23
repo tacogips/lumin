@@ -3,6 +3,7 @@ use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
 use ignore::WalkBuilder;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -20,6 +21,7 @@ impl Default for SearchOptions {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SearchResult {
     pub file_path: PathBuf,
     pub line_number: u64,
@@ -41,8 +43,8 @@ pub fn search_files(
     .context("Failed to create regular expression matcher")?;
 
     // Build the list of files to search
-    let files = collect_files(directory, options)
-        .context("Failed to collect files for searching")?;
+    let files =
+        collect_files(directory, options).context("Failed to collect files for searching")?;
 
     let mut results = Vec::new();
 
@@ -87,15 +89,19 @@ pub fn search_files(
     Ok(results)
 }
 
-fn collect_files(
-    directory: &Path,
-    options: &SearchOptions,
-) -> Result<Vec<PathBuf>> {
+fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
     let mut builder = WalkBuilder::new(directory);
     builder.git_ignore(options.respect_gitignore);
-    builder.hidden(!options.respect_gitignore);
+    // When not respecting gitignore, explicitly include hidden files and dirs
+    builder.hidden(options.respect_gitignore);
+    // Additional settings to ensure we fully respect/ignore gitignore as needed
+    if !options.respect_gitignore {
+        builder.ignore(false); // Turn off all ignore logic
+        builder.git_exclude(false); // Don't use git exclude files
+        builder.git_global(false); // Don't use global git ignore
+    }
 
     for result in builder.build() {
         match result {

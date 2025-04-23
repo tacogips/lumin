@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use file_searcher::search::{search_files, SearchOptions};
-use file_searcher::traverse::{traverse_directory, TraverseOptions};
-use file_searcher::view::{view_file, ViewOptions};
+use file_searcher::search::{SearchOptions, search_files};
+use file_searcher::traverse::{TraverseOptions, traverse_directory};
+use file_searcher::view::{ViewOptions, view_file};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -80,7 +80,7 @@ fn main() -> Result<()> {
             };
 
             let results = search_files(pattern, directory, &options)?;
-            
+
             if results.is_empty() {
                 println!("No matches found.");
             } else {
@@ -109,7 +109,7 @@ fn main() -> Result<()> {
             };
 
             let results = traverse_directory(directory, &options)?;
-            
+
             if results.is_empty() {
                 println!("No files found.");
             } else {
@@ -132,9 +132,9 @@ fn main() -> Result<()> {
             };
 
             let json_output = view_file(file, &options)?;
-            println!("{}", serde_json::to_string_pretty(&json_output)?); 
+            println!("{}", serde_json::to_string_pretty(&json_output)?);
         }
     }
-    
+
     Ok(())
 }

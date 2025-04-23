@@ -1,6 +1,7 @@
 use anyhow::Result;
 use ignore::WalkBuilder;
 use infer::Infer;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 pub struct TraverseOptions {
@@ -19,6 +20,7 @@ impl Default for TraverseOptions {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TraverseResult {
     pub file_path: PathBuf,
     pub file_type: String,
@@ -26,10 +28,21 @@ pub struct TraverseResult {
 
 impl TraverseResult {
     pub fn is_hidden(&self) -> bool {
-        self.file_path
+        // Check if the file name starts with a dot
+        let file_is_hidden = self
+            .file_path
             .file_name()
             .and_then(|n| n.to_str())
-            .is_some_and(|name| name.starts_with("."))
+            .is_some_and(|name| name.starts_with("."));
+
+        // Also check if the file is in a hidden directory
+        let path_contains_hidden_dir = self
+            .file_path
+            .to_string_lossy()
+            .split('/')
+            .any(|part| part.starts_with(".") && !part.is_empty());
+
+        file_is_hidden || path_contains_hidden_dir
     }
 }
 
@@ -43,9 +56,16 @@ pub fn traverse_directory(
     // Configure the file traversal
     let mut builder = WalkBuilder::new(directory);
     builder.git_ignore(options.respect_gitignore);
-    builder.hidden(!options.respect_gitignore);
+    // When respecting gitignore, hidden files are skipped; otherwise they're included
+    builder.hidden(options.respect_gitignore);
     if !options.case_sensitive {
         builder.ignore_case_insensitive(true);
+    }
+    // Additional settings to ensure we fully respect/ignore gitignore as needed
+    if !options.respect_gitignore {
+        builder.ignore(false); // Turn off all ignore logic
+        builder.git_exclude(false); // Don't use git exclude files
+        builder.git_global(false); // Don't use global git ignore
     }
 
     // Walk the directory
