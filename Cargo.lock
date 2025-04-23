@@ -470,24 +470,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
-name = "lumin"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "eza",
- "grep",
- "grep-printer",
- "ignore",
- "ignore-files",
- "infer",
- "serde",
- "serde_json",
- "serial_test",
- "tempfile",
-]
-
-[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1366,6 +1348,24 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "lumin"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "eza",
+ "grep",
+ "grep-printer",
+ "ignore",
+ "ignore-files",
+ "infer",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "tempfile",
+]
 
 [[package]]
 name = "memchr"

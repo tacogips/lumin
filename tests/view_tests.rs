@@ -1,5 +1,5 @@
 use anyhow::Result;
-use file_searcher::view::{FileContents, ViewOptions, view_file};
+use lumin::view::{FileContents, ViewOptions, view_file};
 use serial_test::serial;
 use std::path::Path;
 

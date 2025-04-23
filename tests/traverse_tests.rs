@@ -1,5 +1,5 @@
 use anyhow::Result;
-use file_searcher::traverse::{TraverseOptions, traverse_directory};
+use lumin::traverse::{TraverseOptions, traverse_directory};
 use serial_test::serial;
 use std::path::Path;
 

@@ -1,7 +1,7 @@
 use anyhow::Result;
-use file_searcher::search::{SearchOptions, search_files};
-use file_searcher::traverse::{TraverseOptions, traverse_directory};
-use file_searcher::view::{FileContents, ViewOptions, view_file};
+use lumin::search::{SearchOptions, search_files};
+use lumin::traverse::{TraverseOptions, traverse_directory};
+use lumin::view::{FileContents, ViewOptions, view_file};
 use serial_test::serial;
 use std::path::Path;
 

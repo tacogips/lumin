@@ -1,5 +1,5 @@
 use anyhow::Result;
-use file_searcher::search::{SearchOptions, search_files};
+use lumin::search::{SearchOptions, search_files};
 use serial_test::serial;
 use std::path::Path;
 

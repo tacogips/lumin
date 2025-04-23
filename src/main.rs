@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use file_searcher::search::{SearchOptions, search_files};
-use file_searcher::traverse::{TraverseOptions, traverse_directory};
-use file_searcher::view::{ViewOptions, view_file};
+use lumin::search::{SearchOptions, search_files};
+use lumin::traverse::{TraverseOptions, traverse_directory};
+use lumin::view::{ViewOptions, view_file};
 use std::path::PathBuf;
 
 #[derive(Parser)]
