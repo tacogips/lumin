@@ -4,7 +4,7 @@
 //! with various filtering options including gitignore support and file type detection.
 
 use anyhow::Result;
-use globset::{Glob, GlobBuilder, GlobSetBuilder};
+use globset::{GlobBuilder, GlobSetBuilder};
 use infer::Infer;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -90,7 +90,7 @@ pub fn traverse_directory(
         let mut builder = GlobSetBuilder::new();
         let glob = if options.case_sensitive {
             // Case sensitive matching
-            Glob::new(pattern)?
+            GlobBuilder::new(pattern).build()?
         } else {
             // Case insensitive matching
             GlobBuilder::new(pattern).case_insensitive(true).build()?
