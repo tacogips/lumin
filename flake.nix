@@ -66,7 +66,7 @@
 
         # Simple package definition
         packages.default = buildRustPackageCustom {
-          pname = "cratedocs-mcp";
+          pname = "lumin";
           version = "0.1.0";
           src = ./.;
 
