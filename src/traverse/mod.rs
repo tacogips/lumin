@@ -26,7 +26,14 @@ pub struct TraverseOptions {
     /// Whether to only return text files (filtering out binary files)
     pub only_text_files: bool,
 
-    /// Optional pattern to filter files by path
+    /// Optional pattern to filter files by path.
+    /// 
+    /// Supports two types of patterns:
+    /// - Glob patterns (e.g., "*.rs", "**/*.txt") with special characters like *, ?, [], etc.
+    /// - Simple substring patterns (e.g., "README", "config") for searching within file paths
+    /// 
+    /// The pattern type is automatically detected based on glob special characters.
+    /// Pattern matching respects the `case_sensitive` setting.
     pub pattern: Option<String>,
 }
 
@@ -67,15 +74,21 @@ impl TraverseResult {
 /// # Arguments
 ///
 /// * `directory` - The directory path to traverse
-/// * `options` - Configuration options for the traversal operation
+/// * `options` - Configuration options for the traversal operation, including:
+///   - Case sensitivity settings
+///   - Gitignore respect
+///   - Text-only filtering
+///   - Pattern matching (both glob and substring patterns)
 ///
 /// # Returns
 ///
-/// A vector of traverse results, each containing the file path and type information
+/// A vector of traverse results, each containing the file path and type information.
+/// Results are filtered according to the options provided, including any pattern matching.
 ///
 /// # Errors
 ///
-/// Returns an error if there's an issue accessing the directory or files
+/// Returns an error if there's an issue accessing the directory or files, or if 
+/// pattern compilation fails
 pub fn traverse_directory(
     directory: &Path,
     options: &TraverseOptions,

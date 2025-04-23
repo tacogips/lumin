@@ -22,6 +22,12 @@ This library provides functionality for searching and displaying local files.
 - Specify a target directory to search for file names under that directory.
   Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
 
+- Supports pattern matching to filter files:
+  - Glob patterns (e.g., `*.rs`, `**/*.txt`) using the `globset` crate
+  - Simple substring matching (e.g., `README`, `config`) using the `regex` crate
+  - Automatically detects pattern type and applies appropriate matching strategy
+  - Pattern matching respects case sensitivity settings
+
 - Case sensitivity can be toggled via parameters.
 
 - By default, the library uses the `infer` crate and only returns files that cannot be parsed by this crate (identifying them as text files). This filtering behavior can be toggled via parameters.
