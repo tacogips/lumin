@@ -1,5 +1,25 @@
 # Development Log
 
+## Purpose of this Document
+
+This development log (devlog.md) serves as a comprehensive record of design decisions, implementation details, challenges faced, and solutions applied during the development of the file-searcher utility. 
+
+This document should be updated whenever significant changes are made to the codebase. It acts as both documentation and knowledge transfer for future developers or AI agents working on this project.
+
+The log is organized into sections:
+- Core Features: Descriptions of main functionality modules
+- Technical Considerations: Important technical design choices 
+- Challenges and Solutions: Specific problems encountered and how they were solved
+- Recent Changes: A chronological record of recent major updates
+- Future Work: Planned enhancements and improvements
+
+When asked to "update devlog.md", AI agents should:
+1. Examine recent code changes and identify significant modifications
+2. Document new features, refactorings, or significant bug fixes
+3. Update relevant sections of this document
+4. Add a new entry to the "Recent Changes" section with a timestamp
+5. If applicable, update the "Future Work" section with new ideas
+
 ## Implementation Summary
 
 This document describes the implementation of the file-searcher utility, focusing on design decisions, challenges encountered, and solutions applied.
@@ -27,6 +47,8 @@ This document describes the implementation of the file-searcher utility, focusin
 - **Key components**:
   - `ViewOptions`: Controls size limits
   - `FileView`: Structured output with file path, type, and contents
+  - `FileContents`: Enum with variants for different types of content (text, binary, image)
+  - `TextMetadata`, `BinaryMetadata`, `ImageMetadata`: Specialized metadata structures
   - `view_file()`: Main function for viewing files
 
 ### CLI Interface (`main.rs`)
@@ -57,11 +79,10 @@ This document describes the implementation of the file-searcher utility, focusin
 - Options to respect or ignore gitignore rules
 - Proper handling of the `.hidden` builder flag (critical for test passing)
 
-### JSON Output Structure
-- Structured JSON output for the view command:
-  - For text files: Content and metadata (line count, character count)
-  - For binary files: Message about binary detection and metadata
-  - For images: Special identification and metadata
+### Structured Type System
+- Strong typing using enums and structs for different file content types
+- Type-safe serialization using serde
+- Clear separation of concerns between different file types (text, binary, image)
 
 ### Testing
 - Comprehensive test suite with serial execution using `serial_test`
@@ -140,54 +161,78 @@ This document describes the implementation of the file-searcher utility, focusin
   };
   ```
 
-### JSON Structure
-- **Challenge**: Creating a flexible, informative JSON structure for file contents
-- **Solution**: Structured JSON with different formats for text vs. binary:
+### Type-Safe Output Structure
+- **Challenge**: Creating a type-safe yet flexible structure for file contents
+- **Solution**: Replaced dynamic JSON with a strongly typed enum structure:
   ```rust
-  let contents = if file_type.starts_with("text/") {
-      // Text files get content + metadata
-      json!({
-          "content": text,
-          "metadata": {
-              "line_count": line_count,
-              "char_count": char_count
-          }
-      })
-  } else if file_type.starts_with("image/") {
-      // Special handling for images
-      json!({
-          "message": format!("Image file detected: {}", file_type),
-          "metadata": {
-              "binary": true,
-              "size_bytes": metadata.len(),
-              "media_type": "image"
-          }
-      })
-  } else {
-      // Other binary files
-      json!({
-          "message": format!("Binary file detected, size: {} bytes", metadata.len()),
-          "metadata": {
-              "binary": true,
-              "size_bytes": metadata.len(),
-              "mime_type": file_type
-          }
-      })
-  };
-  ```
-
-### Test Compatibility
-- **Challenge**: Making tests work with changing output formats
-- **Solution**: Added fallback paths in tests to handle both formats:
-  ```rust
-  if let Some(content) = file_view.contents.get("content") {
-      // Check new format
-      assert!(content.as_str().unwrap_or("").contains("#"));
-  } else {
-      // Fallback for old format
-      assert!(file_view.contents.to_string().contains("#"));
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  #[serde(tag = "type")]
+  pub enum FileContents {
+      #[serde(rename = "text")]
+      Text {
+          content: String,
+          metadata: TextMetadata,
+      },
+      #[serde(rename = "binary")]
+      Binary {
+          message: String,
+          metadata: BinaryMetadata,
+      },
+      #[serde(rename = "image")]
+      Image {
+          message: String,
+          metadata: ImageMetadata,
+      },
+  }
+  
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  pub struct TextMetadata {
+      pub line_count: usize,
+      pub char_count: usize,
+  }
+  
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  pub struct BinaryMetadata {
+      pub binary: bool,
+      pub size_bytes: u64,
+      pub mime_type: Option<String>,
   }
   ```
+
+### Test Pattern Matching
+- **Challenge**: Making tests work with enum-based content types instead of direct JSON access
+- **Solution**: Updated tests to use Rust's pattern matching:
+  ```rust
+  match &result.contents {
+      FileContents::Text { content, metadata } => {
+          assert!(!content.is_empty());
+          assert!(content.contains("Configuration file for testing"));
+          assert!(metadata.line_count > 0);
+          assert!(metadata.char_count > 0);
+      },
+      _ => panic!("Expected text content, got a different variant"),
+  }
+  ```
+
+## Recent Changes
+
+### 2025-04-23: Refactored View Module to Use Type-Safe Structures
+- Replaced dynamic JSON construction with strongly typed enum-based structure
+- Created dedicated types for different content categories:
+  - `FileContents` enum with Text, Binary, and Image variants
+  - Specialized metadata structs for each content type
+- Benefits:
+  - More type safety and better compile-time checking
+  - Clearer separation of concerns
+  - Better serialization control with serde attributes
+  - Improved pattern matching in tests
+- Updated all tests to use pattern matching on the enum variants
+
+### 2025-04-23: Enhanced Gitignore Handling and File Detection
+- Fixed issues with gitignore handling in both search and traverse modules
+- Improved detection of hidden files and directories
+- Enhanced file type detection with better extension and content analysis
+- Added special handling for different file categories (text, image, binary)
 
 ## Future Work
 
