@@ -6,7 +6,6 @@
 use anyhow::Result;
 use globset::{GlobBuilder, GlobSetBuilder};
 use infer::Infer;
-use log::{error, info, warn};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};

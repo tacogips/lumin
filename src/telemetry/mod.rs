@@ -1,19 +1,16 @@
-//! Telemetry and logging configuration using OpenTelemetry.
+//! Telemetry and logging configuration using tracing.
 //!
-//! This module provides utilities for setting up OpenTelemetry-based logging
+//! This module provides utilities for setting up tracing-based logging
 //! with stderr output for console visibility, as well as structured telemetry
-//! data collection (traces, metrics, logs).
+//! data collection.
 
 use anyhow::Result;
 use log::{Level, error, info, warn};
-use opentelemetry::sdk::trace::Sampler;
-use opentelemetry_sdk::{Resource, logs};
-use opentelemetry_stdout::LogExporter;
 use std::sync::Once;
 
 static INIT: Once = Once::new();
 
-/// Log message with context for OpenTelemetry
+/// Log message with context
 pub struct LogMessage {
     /// The message to log
     pub message: String,
@@ -25,10 +22,10 @@ pub struct LogMessage {
     pub context: Option<Vec<(&'static str, String)>>,
 }
 
-/// Initialize OpenTelemetry logging with stderr output
+/// Initialize tracing-based logging with stderr output
 ///
-/// This function sets up OpenTelemetry logging with a stderr exporter
-/// and configures the global default logger provider.
+/// This function sets up tracing with a stderr exporter
+/// and configures the global default logger.
 ///
 /// # Returns
 ///
@@ -40,11 +37,11 @@ pub fn init() -> Result<()> {
         match setup_telemetry() {
             Ok(_) => {
                 // Initialize successful
-                info!("OpenTelemetry logging initialized with stderr output");
+                info!("Logging initialized with stderr output");
             }
             Err(e) => {
                 // Cannot use logging yet since it failed to initialize
-                eprintln!("Failed to initialize OpenTelemetry logging: {}", e);
+                eprintln!("Failed to initialize logging: {}", e);
                 result = Err(e);
             }
         }
@@ -113,28 +110,15 @@ fn format_context(msg: &LogMessage) -> String {
     }
 }
 
-/// Set up the OpenTelemetry logging pipeline
+/// Set up the logging pipeline
 fn setup_telemetry() -> Result<()> {
-    // Create a stderr exporter for OpenTelemetry logs
-    let exporter = LogExporter::default();
-
-    // Configure the logger provider with the stderr exporter
-    let provider = logs::LoggerProvider::builder()
-        .with_config(logs::config().with_resource(Resource::new(vec![
-            opentelemetry::KeyValue::new("service.name", "lumin"),
-            opentelemetry::KeyValue::new("service.version", env!("CARGO_PKG_VERSION")),
-        ])))
-        .with_simple_exporter(exporter)
-        .build();
-
-    // Set as the global provider
-    opentelemetry::global::set_logger_provider(provider.clone());
-
-    // Initialize the log crate integration
-    let logger = provider.logger(opentelemetry_sdk::logs::LoggerConfig::default());
-
-    log::set_logger(Box::leak(Box::new(logger)))?;
-    log::set_max_level(log::LevelFilter::Info);
+    // Use simple env_logger for compatibility and stability
+    env_logger::Builder::new()
+        .filter(None, log::LevelFilter::Info)
+        .format_timestamp(None)
+        .format_target(true)
+        .format_module_path(false)
+        .init();
 
     Ok(())
 }
