@@ -17,11 +17,11 @@ impl Default for ViewOptions {
     }
 }
 // Construct the result as a struct, then serialize to JSON
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 pub struct FileView {
-    file_path: std::path::PathBuf,
-    file_type: String,
-    contents: Value,
+    pub file_path: std::path::PathBuf,
+    pub file_type: String,
+    pub contents: Value,
 }
 
 pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {

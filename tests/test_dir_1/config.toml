@@ -1,0 +1,13 @@
+# Configuration file for testing
+
+[general]
+version = "1.0.0"
+name = "test-project"
+
+[search]
+max_depth = 10
+ignore_case = true
+respect_gitignore = true
+
+[view]
+max_size = 1048576  # 1MB
