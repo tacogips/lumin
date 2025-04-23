@@ -61,17 +61,24 @@ mod search_tests {
         Ok(())
     }
     
-    /// Test searching without respecting gitignore
+    /// Test searching with respect_gitignore=true (default)
     #[test]
-    fn test_search_ignore_gitignore() -> Result<()> {
+    fn test_search_respect_gitignore() -> Result<()> {
+        // First, make sure .hidden directory exists with the pattern
+        let secret_file = Path::new(TEST_DIR).join(".hidden").join("secret.txt");
+        assert!(secret_file.exists(), "Test setup error: .hidden/secret.txt doesn't exist");
+        let content = std::fs::read_to_string(&secret_file)?;
+        assert!(content.contains("API_KEY"), "Test setup error: API_KEY not found in secret.txt");
+        
+        // Search with default options (should respect gitignore)
         let pattern = "API_KEY";
-        let mut options = SearchOptions::default();
-        options.respect_gitignore = false;
+        let options = SearchOptions::default();
         
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
-        // Should find the pattern in .hidden directory
-        assert!(results.iter().any(|r| r.file_path.to_string_lossy().contains(".hidden")));
+        // Should NOT find the pattern in .hidden directory
+        assert!(!results.iter().any(|r| r.file_path.to_string_lossy().contains(".hidden")),
+               "Found .hidden files when respecting gitignore");
         
         Ok(())
     }

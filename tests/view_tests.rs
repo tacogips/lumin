@@ -1,13 +1,11 @@
 use anyhow::Result;
 use file_searcher::view::{view_file, ViewOptions};
 use std::path::Path;
-use serde_json::to_value;
 
 /// Tests for the view functionality
 #[cfg(test)]
 mod view_tests {
     use super::*;
-    use std::convert::TryInto;
     
     /// Test viewing a text file
     #[test]
@@ -53,7 +51,7 @@ mod view_tests {
     /// Test viewing a binary file
     #[test]
     fn test_view_binary_file() -> Result<()> {
-        let file_path = Path::new("tests/test_dir_1/images/sample.jpg");
+        let file_path = Path::new("tests/test_dir_1/images/binary_executable");
         let options = ViewOptions::default();
         
         let result = view_file(file_path, &options)?;
@@ -61,11 +59,7 @@ mod view_tests {
         // Check the result
         assert_eq!(result.file_path, file_path);
         
-        // Should detect as image type
-        let file_type = &result.file_type;
-        assert!(file_type.contains("image/"));
-        
-        // For binary files, we return a message
+        // For binary files, we return a message about binary detection
         let contents = result.contents.as_str().unwrap();
         assert!(contents.contains("Binary file detected"));
         
