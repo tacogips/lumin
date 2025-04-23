@@ -6,6 +6,7 @@
 use anyhow::Result;
 use globset::{GlobBuilder, GlobSetBuilder};
 use infer::Infer;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -85,20 +86,37 @@ pub fn traverse_directory(
     // Use the common walker builder
     let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive)?;
 
-    // Set up glob pattern if provided
-    let pattern_matcher = if let Some(pattern) = &options.pattern {
-        let mut builder = GlobSetBuilder::new();
-        let glob = if options.case_sensitive {
-            // Case sensitive matching
-            GlobBuilder::new(pattern).build()?
+    // Set up pattern matching if pattern provided
+    let (pattern_matcher, regex_matcher) = if let Some(pattern) = &options.pattern {
+        // Check if pattern contains glob special characters
+        let is_glob_pattern = pattern.contains('*')
+            || pattern.contains('?')
+            || pattern.contains('[')
+            || pattern.contains(']');
+
+        if is_glob_pattern {
+            // Use glob pattern matching for patterns with glob syntax
+            let mut builder = GlobSetBuilder::new();
+            let glob = if options.case_sensitive {
+                // Case sensitive matching
+                GlobBuilder::new(pattern).build()?
+            } else {
+                // Case insensitive matching
+                GlobBuilder::new(pattern).case_insensitive(true).build()?
+            };
+            builder.add(glob);
+            (Some(builder.build()?), None)
         } else {
-            // Case insensitive matching
-            GlobBuilder::new(pattern).case_insensitive(true).build()?
-        };
-        builder.add(glob);
-        Some(builder.build()?)
+            // Use regex for simple substring matching
+            let regex_pattern = if options.case_sensitive {
+                format!(r".*{}.*", regex::escape(pattern)) // Match anywhere in the string
+            } else {
+                format!(r"(?i).*{}.*", regex::escape(pattern)) // Case insensitive match
+            };
+            (None, Some(Regex::new(&regex_pattern)?))
+        }
     } else {
-        None
+        (None, None)
     };
 
     // Walk the directory
@@ -108,12 +126,18 @@ pub fn traverse_directory(
                 let path = entry.path();
                 if path.is_file() {
                     // Check if the path matches the pattern if one is provided
-                    let matches_pattern = if let Some(matcher) = &pattern_matcher {
-                        // Get a relative path from the directory for matching
-                        let rel_path = path.strip_prefix(directory).unwrap_or(path);
-                        matcher.is_match(rel_path)
-                    } else {
-                        true // Include all files if no pattern is specified
+                    let matches_pattern = match (&pattern_matcher, &regex_matcher) {
+                        (Some(glob_matcher), None) => {
+                            // Use glob matching
+                            let rel_path = path.strip_prefix(directory).unwrap_or(path);
+                            glob_matcher.is_match(rel_path)
+                        }
+                        (None, Some(regex)) => {
+                            // Use regex for substring matching on filename and path
+                            let path_str = path.to_string_lossy();
+                            regex.is_match(&path_str)
+                        }
+                        _ => true, // Include all files if no pattern is specified
                     };
 
                     // Only proceed if the file matches the pattern

@@ -249,6 +249,36 @@ mod traverse_tests {
                 .all(|r| r.file_path.to_string_lossy().contains("/docs/"))
         );
 
+        // Test with plain text substring matching (non-glob pattern)
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("README".to_string()); // Use a filename we know exists
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should find files with "README" in the path
+        assert!(!results.is_empty());
+        assert!(
+            results
+                .iter()
+                .any(|r| r.file_path.to_string_lossy().contains("README"))
+        );
+
+        // Test with plain text substring matching (case insensitive)
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("contributing".to_string()); // Different pattern for case insensitive test
+        options.case_sensitive = false;
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should find files with "CONTRIBUTING" in the path (case insensitive)
+        assert!(!results.is_empty());
+        assert!(results.iter().any(|r| {
+            r.file_path
+                .to_string_lossy()
+                .to_lowercase()
+                .contains("contributing")
+        }));
+
         Ok(())
     }
 }

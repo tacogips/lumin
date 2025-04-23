@@ -216,22 +216,25 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
-### 2025-04-23: Added Pattern Matching to Traverse Command
-- Added glob pattern matching to filter files in the traverse command
+### 2025-04-23: Enhanced Pattern Matching in Traverse Command
+- Added both glob and substring pattern matching to filter files in the traverse command
 - Changes:
   - Added `pattern` field to `TraverseOptions` struct
   - Modified `traverse_directory` function to filter files based on pattern
-  - Added pattern matching using the `globset` crate
+  - Added multi-mode pattern matching using both `globset` and `regex` crates
   - Updated CLI to accept optional pattern parameter
-  - Added comprehensive tests for pattern matching
+  - Added comprehensive tests for pattern matching (both glob and substring)
 - Benefits:
-  - More powerful filtering capabilities for traverse command
+  - More powerful and flexible filtering capabilities for traverse command
   - Support for glob patterns like "**/*.rs" to find specific file types
+  - Support for simple substring matching (e.g., searching for "README")
   - Case-sensitive/insensitive pattern matching respecting existing options
 - Implementation details:
-  - Used `GlobBuilder` with case sensitivity configuration
-  - Applied pattern matching to relative paths
-  - Added proper error handling for pattern compilation
+  - Intelligently selects pattern matching mode based on input
+  - Uses `GlobBuilder` with case sensitivity for glob patterns
+  - Uses `Regex` with case insensitivity flags for substring patterns
+  - Checks for glob special characters to determine matching strategy
+  - Applied pattern matching to respect user's intent for both modes
 
 ### 2025-04-23: Removed Binary Filtering from Tree Module
 - Simplified the tree functionality by removing binary file filtering
