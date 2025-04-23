@@ -360,8 +360,12 @@ version = "0.1.0"
 dependencies = [
  "eza",
  "grep",
+ "grep-printer",
+ "ignore",
  "ignore-files",
  "infer",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
