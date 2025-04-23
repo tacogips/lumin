@@ -6,6 +6,7 @@
 use anyhow::Result;
 use globset::{GlobBuilder, GlobSetBuilder};
 use infer::Infer;
+use log::{error, info, warn};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -13,6 +14,7 @@ use std::path::{Path, PathBuf};
 // Common utilities for traverse and tree operations
 pub mod common;
 use common::{build_walk, is_hidden_path};
+use crate::telemetry::{log_with_context, LogMessage};
 
 /// Configuration options for directory traversal operations.
 #[derive(Debug, Clone)]
@@ -193,7 +195,16 @@ pub fn traverse_directory(
                 }
             }
             Err(err) => {
-                eprintln!("Error walking directory: {}", err);
+                log_with_context(
+                    log::Level::Warn,
+                    LogMessage {
+                        message: format!("Error walking directory: {}", err),
+                        module: "traverse",
+                        context: Some(vec![
+                            ("directory", directory.display().to_string()),
+                        ]),
+                    }
+                );
             }
         }
     }

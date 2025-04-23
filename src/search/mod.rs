@@ -9,9 +9,12 @@ use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
 use ignore::WalkBuilder;
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
+
+use crate::telemetry::{log_with_context, LogMessage};
 
 /// Configuration options for file search operations.
 pub struct SearchOptions {
@@ -95,7 +98,16 @@ pub fn search_files(
         let file = match File::open(&file_path) {
             Ok(f) => f,
             Err(e) => {
-                eprintln!("Failed to open file {}: {}", file_path.display(), e);
+                log_with_context(
+                    log::Level::Warn,
+                    LogMessage {
+                        message: format!("Failed to open file: {}", e),
+                        module: "search",
+                        context: Some(vec![
+                            ("file_path", file_path.display().to_string()),
+                        ]),
+                    }
+                );
                 continue;
             }
         };
@@ -165,7 +177,16 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
                 }
             }
             Err(err) => {
-                eprintln!("Error walking directory: {}", err);
+                log_with_context(
+                    log::Level::Warn,
+                    LogMessage {
+                        message: format!("Error walking directory: {}", err),
+                        module: "search",
+                        context: Some(vec![
+                            ("directory", directory.display().to_string()),
+                        ]),
+                    }
+                );
             }
         }
     }

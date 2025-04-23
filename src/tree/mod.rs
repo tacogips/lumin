@@ -1,10 +1,12 @@
 use anyhow::Result;
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
 // Reuse the common traversal logic
 use crate::traverse::common::{build_walk, is_hidden_path};
+use crate::telemetry::{log_with_context, LogMessage};
 
 /// Configuration options for directory tree operations.
 #[derive(Debug, Clone)]
@@ -76,7 +78,16 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
         let entry = match result {
             Ok(entry) => entry,
             Err(err) => {
-                eprintln!("Error walking directory: {}", err);
+                log_with_context(
+                    log::Level::Warn,
+                    LogMessage {
+                        message: format!("Error walking directory: {}", err),
+                        module: "tree",
+                        context: Some(vec![
+                            ("directory", directory.display().to_string()),
+                        ]),
+                    }
+                );
                 continue;
             }
         };

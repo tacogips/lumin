@@ -10,8 +10,8 @@ When working with this codebase, refer to the following key documents:
 - **spec.md**: Library specifications and implementation details
 - **devlog.md**: Development log with design decisions, implementation details, and roadmap
 
-For library-specific specifications and implementation details, refer to spec.md. 
-To understand the history, architecture decisions, and implementation details of this project, always refer to the devlog.md file. 
+For library-specific specifications and implementation details, refer to spec.md.
+To understand the history, architecture decisions, and implementation details of this project, always refer to the devlog.md file.
 When making significant changes, update devlog.md to document your work by following the instructions at the top of that file.
 
 ## Build & Run Commands
@@ -31,13 +31,16 @@ When making significant changes, update devlog.md to document your work by follo
 - Use descriptive variable and function names in snake_case
 - Prefer Result<T, E> over unwrap()/expect() for error handling
 - Organize imports alphabetically with std first, then external crates
-- Use structured logging via the log crate when implementing logging
+- Use OpenTelemetry (OTEL) for logging and telemetry with stderr output for console visibility
 - Add type annotations for public functions/methods
 - Match arms should be aligned
 - Use Rust's ownership system effectively (avoid unnecessary clones)
 - Actively use cargo-docs (mcp) to investigate crate usage patterns
 
 ## Development Guidelines
+
+### Rule of Thumbs
+You should think and output in English
 
 ### Making Changes
 

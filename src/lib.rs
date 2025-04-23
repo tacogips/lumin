@@ -8,6 +8,8 @@
 //! * File traversal - Explore directory structures with customizable filters
 //! * File viewing - Display file contents with type detection and metadata
 //! * Directory tree - Display directory structures in a hierarchical tree format
+//!
+//! Lumin uses OpenTelemetry for logging and telemetry with stderr output for console visibility.
 
 /// File content searching functionality using regex patterns
 pub mod search;
@@ -17,3 +19,6 @@ pub mod traverse;
 pub mod tree;
 /// File content viewing with type detection and formatting
 pub mod view;
+
+/// Telemetry and logging configuration
+pub mod telemetry;
