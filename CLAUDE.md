@@ -46,7 +46,7 @@ In this project, the term "documentation" or "project documentation" refers to t
 - spec.md
 - devlog.md
 
-When asked to update "documentation" or "ドキュメント類", you should check and update all of these documentation sources for consistency.
+When asked to update "documentation", you should check and update all of these documentation sources for consistency.
 
 ### Rule of Thumbs
 You should think and output in English
