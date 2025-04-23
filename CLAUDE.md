@@ -31,6 +31,7 @@ This library provides functionality for searching and displaying local files.
 
 ### File Searching
 
+- Primarily using the `grep` crate as a library
 - Logic is defined in the `search` package.
   Specify a target directory to grep through files under that directory.
   Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
@@ -38,6 +39,7 @@ This library provides functionality for searching and displaying local files.
 
 ### File Traversal
 
+- Primarily using the `eza` crate as a library
 - Logic is defined in the `traverse` package.
 
 - Specify a target directory to search for file names under that directory.
