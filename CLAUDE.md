@@ -31,13 +31,22 @@ When making significant changes, update devlog.md to document your work by follo
 - Use descriptive variable and function names in snake_case
 - Prefer Result<T, E> over unwrap()/expect() for error handling
 - Organize imports alphabetically with std first, then external crates
-- Use OpenTelemetry (OTEL) for logging and telemetry with stderr output for console visibility
+- Use structured logging via env_logger and tracing with stderr output for console visibility
 - Add type annotations for public functions/methods
 - Match arms should be aligned
 - Use Rust's ownership system effectively (avoid unnecessary clones)
 - Actively use cargo-docs (mcp) to investigate crate usage patterns
 
 ## Development Guidelines
+
+### Documentation Terminology
+In this project, the term "documentation" or "project documentation" refers to the following:
+- Source code comments and documentation strings
+- CLAUDE.md (this file)
+- spec.md
+- devlog.md
+
+When asked to update "documentation" or "ドキュメント類", you should check and update all of these documentation sources for consistency.
 
 ### Rule of Thumbs
 You should think and output in English

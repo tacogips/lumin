@@ -83,7 +83,7 @@ enum Commands {
 }
 
 fn main() -> Result<()> {
-    // Initialize OpenTelemetry logging
+    // Initialize structured logging
     lumin::telemetry::init()?;
     let cli = Cli::parse();
 

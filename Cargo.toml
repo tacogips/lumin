@@ -25,10 +25,6 @@ ignore = "0.4.23"
 ignore-files = "3.0.3"
 infer = "0.19.0"
 log = "0.4.20"
-opentelemetry = "0.21.0"
-opentelemetry-stdout = { version = "0.2.0", features = ["trace", "logs"] }
-opentelemetry_sdk = { version = "0.21.2", features = ["logs", "rt-tokio"] }
-opentelemetry-semantic-conventions = "0.13.0"
 regex = "1.11.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

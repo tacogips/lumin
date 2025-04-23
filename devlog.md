@@ -216,21 +216,23 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
-### 2025-04-23: Updated Logging System to Use OpenTelemetry
-- Replaced the standard log crate with OpenTelemetry for logging
+### 2025-04-23: Updated Logging System to Use Tracing
+- Replaced OpenTelemetry with tracing-subscriber for a more reliable logging solution
 - Changes:
-  - Updated code style guidelines to prefer OpenTelemetry for logging
-  - Removed stderr printing in favor of structured logging
-  - Configured OpenTelemetry to forward logs to stderr for console visibility
+  - Updated telemetry module to use tracing-subscriber and env_logger
+  - Simplified logging setup to avoid initialization issues
+  - Maintained structured logging capabilities with stderr output
+  - Fixed unused imports across modules
 - Benefits:
-  - More comprehensive telemetry data collection (traces, metrics, logs)
-  - Better integration with observability platforms
-  - Consistent logging approach with structured data
-  - Improved debug capabilities while maintaining console output
+  - More stable logging implementation with fewer dependencies
+  - Same capabilities for structured logging and console output
+  - Better compatibility with Rust ecosystem
+  - Consistent log format using env_logger for readability
 - Implementation details:
-  - Used OpenTelemetry's stderr exporter for console visibility
-  - Maintained backward compatibility with existing log levels
+  - Used env_logger for console output and configuration
+  - Maintained compatibility with existing log levels and log crate
   - Applied centralized logging configuration for consistent behavior
+  - Used Once guard to ensure single initialization
 
 ### 2025-04-23: Enhanced Pattern Matching in Traverse Command
 - Added both glob and substring pattern matching to filter files in the traverse command
