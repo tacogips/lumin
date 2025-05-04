@@ -38,9 +38,41 @@
               dontFixCargo = true;
               cargoLockCheck = false;
               doCheck = false;
-
             }
           );
+          
+        # Build cargo-machete with the same rust-toolchain version
+        cargo-machete = pkgs.fetchFromGitHub {
+          owner = "bnjbvr";
+          repo = "cargo-machete";
+          rev = "v0.8.0";
+          sha256 = "sha256-0vlau3leAAonV5E9NAtSqw45eKoZBzHx0BmoEY86Eq8=";
+        };
+        
+        # Shell script to build and run cargo-machete with the specific toolchain
+        cargo-machete-wrapper = pkgs.writeShellScriptBin "cargo-machete" ''
+          # Use the specific rust-toolchain version
+          export PATH=${rust-toolchain}/bin:$PATH
+          
+          # Create a temporary build directory
+          TEMP_DIR=$(mktemp -d)
+          trap "rm -rf $TEMP_DIR" EXIT
+          
+          # Copy source to temporary directory
+          cp -r ${cargo-machete}/* $TEMP_DIR/
+          cd $TEMP_DIR
+          
+          # Build with the specific toolchain
+          if [ ! -f ~/.cargo/.cargo-machete-built ]; then
+            echo "Building cargo-machete with specific Rust toolchain..."
+            cargo build --release
+            cp target/release/cargo-machete ~/.cargo/bin/
+            touch ~/.cargo/.cargo-machete-built
+          fi
+          
+          # Run the installed binary
+          exec ~/.cargo/bin/cargo-machete "$@"
+        '';
       in
       {
         # Development shell with Rust toolchain
@@ -53,7 +85,7 @@
             pkgs.nodejs
             pkgs.nodePackages.npm
             pkgs.go-task
-            pkgs.cargo-machete
+            cargo-machete-wrapper
           ];
 
           # Add OpenSSL configuration
