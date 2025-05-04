@@ -77,11 +77,10 @@
             pkgs.nodejs
             pkgs.nodePackages.npm
             pkgs.go-task
-          ];
-
-          inputsFrom = [
             cargo-machete
           ];
+
+          inputsFrom = [ ];
 
           # Add OpenSSL configuration
           shellHook = ''
@@ -96,7 +95,7 @@
         # Simple package definition
         packages.default = buildRustPackageCustom {
           pname = "lumin";
-          version = "0.1.3";
+          version = "0.1.4";
           src = ./.;
 
           # Basic cargo lock configuration
