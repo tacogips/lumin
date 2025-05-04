@@ -62,7 +62,7 @@ use std::path::{Path, PathBuf};
 
 // Common utilities for traverse and tree operations
 pub mod common;
-use crate::telemetry::{LogMessage, log_with_context};
+use crate::telemetry::{log_with_context, LogMessage};
 use common::{build_walk, is_hidden_path};
 
 /// Configuration options for directory traversal operations.
@@ -143,17 +143,40 @@ pub struct TraverseOptions {
     ///
     /// ## Glob Pattern Examples
     ///
+    /// ### Basic Wildcards
     /// - `*.txt` - All files with .txt extension in the current directory
     /// - `**/*.txt` - All .txt files in any subdirectory (recursive)
+    /// - `file?.txt` - Matches file1.txt or fileA.txt, but not file10.txt (? matches one character)
     /// - `src/*.rs` - All Rust files in the src directory
     /// - `**/test_*.rs` - All Rust files starting with "test_" in any directory
-    /// - `**/{test,spec}/*.js` - All JS files in any "test" or "spec" directory
+    ///
+    /// ### Character Classes
+    /// - `file[123].txt` - Matches file1.txt, file2.txt, and file3.txt only
+    /// - `[a-z]*.rs` - Rust files starting with a lowercase letter
     /// - `data/[0-9]?_*.dat` - Data files with specific naming pattern
+    /// - `**/level[a-zA-Z0-9].txt` - Files named level followed by any letter or digit
+    /// - `**/[!0-9]*.txt` - Files not starting with a digit
+    ///
+    /// ### Brace Expansion
+    /// - `*.{txt,md,rs}` - Files with .txt, .md, or .rs extensions
+    /// - `**/{test,spec}/*.js` - All JS files in any "test" or "spec" directory
+    /// - `{src,lib}/**/*.rs` - Rust files in src or lib directories or their subdirectories
+    /// - `**/{configs,settings}/*.{json,yml}` - Configuration files with specific extensions
+    ///
+    /// ### Complex Patterns
+    /// - `**/nested/**/*[0-9].{txt,md}` - Files ending with a digit in any nested directory
+    /// - `**/{test,spec}_[a-z]*/*.{js,ts}` - Test files with specific naming patterns
+    /// - `**/[a-z]*-[0-9].{txt,md,json}` - Files with specific name pattern (lowercase-digit.ext)
+    /// - `**/{docs,images}/[!.]*` - Non-hidden files in docs or images directories
     ///
     /// ## Substring Pattern Examples
     ///
+    /// When a pattern doesn't contain glob special characters, it's treated as a simple substring match:
+    /// 
     /// - `config` - Any file with "config" in its path (e.g., "config.toml", "app_config.json")
     /// - `test` - Any file with "test" in its path (e.g., "test_data.txt", "tests/example.rs")
+    /// - `README` - Any file with "README" in its path, case-sensitive if enabled
+    /// - `util` - Any file with "util" in its path (e.g., "utils.rs", "utility.js")
     pub pattern: Option<String>,
 }
 
@@ -277,6 +300,8 @@ impl TraverseResult {
 ///
 /// # Examples
 ///
+/// ## Basic Usage
+///
 /// Basic traversal with default options:
 /// ```no_run
 /// use lumin::traverse::{TraverseOptions, traverse_directory};
@@ -291,13 +316,15 @@ impl TraverseResult {
 /// println!("Found {} files", results.len());
 /// ```
 ///
-/// Using glob patterns:
+/// ## Using Glob Patterns
+///
+/// ### Basic Wildcards
 /// ```no_run
 /// use lumin::traverse::{TraverseOptions, traverse_directory};
 /// use std::path::Path;
 ///
-/// // Find all Rust source files
-/// let results = traverse_directory(
+/// // Find all Rust source files in any subdirectory
+/// let rust_files = traverse_directory(
 ///     Path::new("."),
 ///     &TraverseOptions {
 ///         pattern: Some("**/*.rs".to_string()),
@@ -305,26 +332,80 @@ impl TraverseResult {
 ///     }
 /// ).unwrap();
 ///
-/// // Find all text files in the test directory structure
-/// let test_files = traverse_directory(
-///     Path::new("tests"),
+/// // Find files with specific single-character wildcard
+/// let numbered_files = traverse_directory(
+///     Path::new("data"),
 ///     &TraverseOptions {
-///         pattern: Some("**/{test,spec}_*.{rs,txt}".to_string()),
-///         ..TraverseOptions::default()
-///     }
-/// ).unwrap();
-///
-/// // Find any Cargo.toml or package.json files
-/// let project_files = traverse_directory(
-///     Path::new("."),
-///     &TraverseOptions {
-///         pattern: Some("**/Cargo.toml".to_string()),
+///         pattern: Some("file?.txt".to_string()),
 ///         ..TraverseOptions::default()
 ///     }
 /// ).unwrap();
 /// ```
 ///
-/// Using substring patterns:
+/// ### Character Classes
+/// ```no_run
+/// use lumin::traverse::{TraverseOptions, traverse_directory};
+/// use std::path::Path;
+///
+/// // Find files with specific character patterns
+/// let level_files = traverse_directory(
+///     Path::new("docs"),
+///     &TraverseOptions {
+///         pattern: Some("level[1-3].txt".to_string()),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+///
+/// // Files not starting with a digit
+/// let non_numeric_files = traverse_directory(
+///     Path::new("reports"),
+///     &TraverseOptions {
+///         pattern: Some("[!0-9]*.pdf".to_string()),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+/// ```
+///
+/// ### Brace Expansion
+/// ```no_run
+/// use lumin::traverse::{TraverseOptions, traverse_directory};
+/// use std::path::Path;
+///
+/// // Find all text files with common extensions
+/// let text_files = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         pattern: Some("**/*.{txt,md,rs}".to_string()),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+///
+/// // Find config files in specific directories
+/// let config_files = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         pattern: Some("**/{configs,settings}/*.{json,yml,toml}".to_string()),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+/// ```
+///
+/// ### Complex Patterns
+/// ```no_run
+/// use lumin::traverse::{TraverseOptions, traverse_directory};
+/// use std::path::Path;
+///
+/// // Complex pattern combining multiple features
+/// let test_files = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         pattern: Some("**/{test,spec}/*[0-9]/*.{rs,ts}".to_string()),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+/// ```
+///
+/// ## Using Substring Patterns
 /// ```no_run
 /// use lumin::traverse::{TraverseOptions, traverse_directory};
 /// use std::path::Path;
@@ -344,6 +425,16 @@ impl TraverseResult {
 ///     &TraverseOptions {
 ///         pattern: Some("test".to_string()),
 ///         only_text_files: false,
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+///
+/// // Find files with case-sensitive matching
+/// let case_sensitive_search = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         pattern: Some("README".to_string()),
+///         case_sensitive: true,
 ///         ..TraverseOptions::default()
 ///     }
 /// ).unwrap();
@@ -457,7 +548,9 @@ pub fn traverse_directory(
                     LogMessage {
                         message: format!("Error walking directory: {}", err),
                         module: "traverse",
-                        context: Some(vec![("directory", directory.display().to_string())]),
+                        context: Some(vec![
+                            ("directory", directory.display().to_string()),
+                        ]),
                     },
                 );
             }
