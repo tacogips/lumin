@@ -3,18 +3,55 @@
 //! This module provides tools to traverse directory structures and list files
 //! with various filtering options including gitignore support and file type detection.
 //!
+//! # Pattern Matching
+//!
 //! The traverse functionality supports both glob and substring pattern matching for
-//! file filtering, allowing for powerful and flexible directory exploration:
+//! file filtering, allowing for powerful and flexible directory exploration.
 //!
-//! - Single-character wildcards: `?` matches any single character
-//! - Multi-character wildcards: `*` matches any number of characters
-//! - Recursive matching: `**` matches any number of nested directories
-//! - Character classes: `[abc]` matches any character in the set
-//! - Negated character classes: `[!0-9]` matches any character not in the set
-//! - Brace expansion: `{txt,md}` matches either "txt" or "md"
-//! - Complex directory patterns: `**/dir/*/*.txt`
+//! ## Glob Pattern Syntax
 //!
-//! For examples and more details on pattern syntax, see the `traverse_directory` function.
+//! Glob patterns allow for rich file matching using special characters:
+//!
+//! - **Single-character wildcards**: `?` matches any single character
+//!   - `file?.txt` matches `file1.txt` and `fileA.txt`, but not `file10.txt`
+//!   - `level?.txt` matches `level1.txt` and `levelA.txt` exactly
+//!
+//! - **Multi-character wildcards**: `*` matches any number of characters within a path segment
+//!   - `*.txt` matches all .txt files in the current directory
+//!   - `test_*.txt` matches `test_file.txt` and `test_data.txt`
+//!
+//! - **Recursive matching**: `**` matches any number of nested directories
+//!   - `**/*.rs` matches all Rust files in any subdirectory
+//!   - `src/**/test/*.rs` matches all Rust files in any `test` directory under `src`
+//!
+//! - **Character classes**: `[abc]` matches any character in the set
+//!   - `file[123].txt` matches `file1.txt`, `file2.txt`, and `file3.txt`
+//!   - `[a-z]*.txt` matches any file starting with a lowercase letter
+//!   - `level[a-zA-Z].txt` matches `levelA.txt` or `levelb.txt`
+//!
+//! - **Negated character classes**: `[!abc]` or `[^abc]` matches any character not in the set
+//!   - `[!0-9]*.txt` matches files not starting with a digit
+//!   - `file[^.].txt` matches `fileA.txt` but not `file..txt`
+//!
+//! - **Brace expansion**: `{a,b,c}` matches any of the comma-separated patterns
+//!   - `*.{txt,md,rs}` matches files with .txt, .md, or .rs extensions
+//!   - `{src,tests}/*.rs` matches Rust files in either src or tests directories
+//!   - `{config,settings}.*` matches config/settings files with any extension
+//!
+//! - **Complex combinations**:
+//!   - `**/{test,spec}/*[0-9]?.{js,ts}` combines multiple glob features
+//!   - `**/[a-z]*-[0-9].{txt,md,json}` matches specific naming patterns
+//!
+//! ## Substring Pattern Matching
+//!
+//! When a pattern doesn't contain glob special characters, it's treated as a simple
+//! substring match against the entire file path:
+//!
+//! - `config` matches any file with "config" in its path (e.g., "config.toml", "app_config.json")
+//! - `test` matches any file with "test" in its path (e.g., "test_data.txt", "tests/example.rs")
+//! - Substring matching respects the `case_sensitive` option
+//!
+//! For more examples and detailed usage patterns, see the `traverse_directory` function.
 
 use anyhow::Result;
 use globset::{GlobBuilder, GlobSetBuilder};
