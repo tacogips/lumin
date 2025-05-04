@@ -216,13 +216,13 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
-### 2025-04-23: Updated Logging System to Use Tracing
-- Replaced OpenTelemetry with tracing-subscriber for a more reliable logging solution
+### 2025-05-05: Simplified Logging System to Use env_logger
+- Removed tracing dependencies in favor of a simpler logging solution
 - Changes:
-  - Updated telemetry module to use tracing-subscriber and env_logger
+  - Updated telemetry module to use env_logger exclusively
   - Simplified logging setup to avoid initialization issues
   - Maintained structured logging capabilities with stderr output
-  - Fixed unused imports across modules
+  - Removed unused tracing imports across modules
 - Benefits:
   - More stable logging implementation with fewer dependencies
   - Same capabilities for structured logging and console output

@@ -1,8 +1,7 @@
-//! Telemetry and logging configuration using tracing.
+//! Telemetry and logging configuration using env_logger.
 //!
-//! This module provides utilities for setting up tracing-based logging
-//! with stderr output for console visibility, as well as structured telemetry
-//! data collection.
+//! This module provides utilities for setting up logging with stderr output
+//! for console visibility, as well as structured telemetry data collection.
 
 use anyhow::Result;
 use log::{Level, error, info, warn};
@@ -22,9 +21,9 @@ pub struct LogMessage {
     pub context: Option<Vec<(&'static str, String)>>,
 }
 
-/// Initialize tracing-based logging with stderr output
+/// Initialize env_logger-based logging with stderr output
 ///
-/// This function sets up tracing with a stderr exporter
+/// This function sets up env_logger with a stderr output
 /// and configures the global default logger.
 ///
 /// # Returns

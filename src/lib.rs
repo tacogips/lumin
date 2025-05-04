@@ -9,7 +9,7 @@
 //! * File viewing - Display file contents with type detection and metadata
 //! * Directory tree - Display directory structures in a hierarchical tree format
 //!
-//! Lumin uses structured logging via env_logger and tracing with stderr output for console visibility.
+//! Lumin uses structured logging via env_logger with stderr output for console visibility.
 
 /// File content searching functionality using regex patterns
 pub mod search;
