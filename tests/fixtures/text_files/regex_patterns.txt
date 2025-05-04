@@ -1,0 +1,28 @@
+This file contains various patterns for regex testing.
+
+Basic text: apple orange banana
+Numbers: 123 456 789
+Mixed: abc123 def456 ghi789
+
+Special characters: .* + ? ^ $ [] {} () \ |
+Emails: user@example.com another.user@domain.co.uk
+URLs: https://example.com https://test.org/path?query=value
+
+Words with boundaries: word another_word third-word
+Phone numbers: 123-456-7890 (123) 456-7890 +1-123-456-7890
+
+Repeated patterns: aaa aaaa aaaaa
+Mixed repeats: abababab cdcdcdcd
+
+Starting with prefix: prefixABC prefixDEF
+Ending with suffix: XYZsuffix 123suffix
+
+Capture groups test: (group1) [group2] {group3}
+Nested groups: (outer (inner) outer)
+
+Multiline content:
+Line 1 with pattern
+Line 2 without
+Line 3 with PATTERN
+
+End of file

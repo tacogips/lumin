@@ -1,0 +1,32 @@
+This file contains examples for testing glob pattern matching:
+
+Single-character wildcard ? examples:
+file.txt
+file?.txt
+file??.txt
+
+Wildcard * examples:
+*.txt
+file*.txt
+*.md
+*.{rs,toml}
+
+Directory matching with ** examples:
+**/file.txt
+src/**/mod.rs
+**/*.{rs,toml}
+
+Character class examples:
+file[0-9].txt
+log[abc].txt
+file[!0-9].txt
+
+Brace expansion examples:
+file.{txt,md,rs}
+{src,tests}/*.rs
+{one,two,three}.txt
+
+Complex pattern examples:
+{src,tests}/**/*.{rs,toml}
+**/[a-z]?_*.{txt,md}
+**/{test,spec}_*.{js,ts}
