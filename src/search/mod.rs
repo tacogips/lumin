@@ -3,6 +3,20 @@
 //! This module provides tools to search for text patterns in files
 //! within a specified directory, with options for case sensitivity
 //! and gitignore handling.
+//!
+//! The search functionality uses regular expressions for advanced pattern matching,
+//! supporting features such as:
+//! 
+//! - Basic literal matching (e.g., `apple`)
+//! - Wildcards (e.g., `a..le` to match "apple")
+//! - Character classes (e.g., `[0-9]+` to match one or more digits)
+//! - Word boundaries (e.g., `\bword\b` to match "word" as a standalone word)
+//! - Anchors for line start/end (e.g., `^Line` to match at line start, `file$` at line end)
+//! - Alternation (e.g., `apple|orange` to match either term)
+//! - Repetition (e.g., `a{3,}` to match 3 or more 'a's)
+//! - Quantifiers (e.g., `a+` for one or more, `a*` for zero or more)
+//!
+//! For more complex searching, see the examples in the `search_files` function.
 
 use anyhow::{Context, Result};
 use grep::regex::RegexMatcher;
@@ -16,13 +30,53 @@ use std::path::{Path, PathBuf};
 use crate::telemetry::{log_with_context, LogMessage};
 
 /// Configuration options for file search operations.
+///
+/// Controls the behavior of the search functionality, including case sensitivity
+/// and how gitignore files are handled.
+///
+/// # Examples
+///
+/// ```
+/// use lumin::search::SearchOptions;
+///
+/// // Default options: case-insensitive search respecting gitignore files
+/// let default_options = SearchOptions::default();
+///
+/// // Case-sensitive search, ignoring gitignore files
+/// let custom_options = SearchOptions {
+///     case_sensitive: true,
+///     respect_gitignore: false,
+/// };
+///
+/// // Case-insensitive search, respecting gitignore files
+/// let mixed_options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+/// };
+/// ```
 pub struct SearchOptions {
     /// Whether the search should be case sensitive.
-    /// When false, matches will be found regardless of letter case.
+    /// 
+    /// When `true`, matches will only be found when the exact case matches.
+    /// When `false` (default), matches will be found regardless of letter case.
+    ///
+    /// # Examples
+    ///
+    /// - With `case_sensitive: true`, searching for "PATTERN" will only match "PATTERN", not "pattern"
+    /// - With `case_sensitive: false`, searching for "pattern" will match both "pattern" and "PATTERN"
     pub case_sensitive: bool,
 
     /// Whether to respect .gitignore files when determining which files to search.
-    /// When true, files listed in .gitignore will be excluded from the search.
+    /// 
+    /// When `true` (default), files listed in .gitignore will be excluded from the search.
+    /// When `false`, all files will be searched, including those that would normally be ignored.
+    ///
+    /// # Examples
+    ///
+    /// - With `respect_gitignore: true`, searching will skip files like .git/, node_modules/, 
+    ///   .tmp, or any patterns specified in .gitignore files
+    /// - With `respect_gitignore: false`, searching will include all files, even those listed 
+    ///   in .gitignore files
     pub respect_gitignore: bool,
 }
 
@@ -36,37 +90,152 @@ impl Default for SearchOptions {
 }
 
 /// Represents a single search match result.
+///
+/// Contains information about where a match was found, including the file path,
+/// line number, and the actual content of the matching line.
+///
+/// # Examples
+///
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let pattern = "example";
+/// let directory = Path::new("src");
+/// let options = SearchOptions::default();
+///
+/// match search_files(pattern, directory, &options) {
+///     Ok(results) => {
+///         for result in results {
+///             println!("Found '{}' in {}:{}: {}", 
+///                      pattern,
+///                      result.file_path.display(),
+///                      result.line_number,
+///                      result.line_content.trim());
+///         }
+///     },
+///     Err(e) => eprintln!("Search error: {}", e),
+/// }
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SearchResult {
-    /// Path to the file containing the match
+    /// Path to the file containing the match.
+    ///
+    /// This is the absolute or relative path to the file where the match was found,
+    /// depending on the input provided to the search function.
     pub file_path: PathBuf,
 
-    /// Line number where the match was found (1-based)
+    /// Line number where the match was found (1-based).
+    ///
+    /// Note: Line numbers start at 1, not 0, to match standard editor and command-line
+    /// tool conventions.
     pub line_number: u64,
 
-    /// Content of the line containing the match
+    /// Content of the line containing the match.
+    ///
+    /// This contains the entire line where the match was found, not just the
+    /// matched substring. The matched pattern may appear anywhere within this string.
     pub line_content: String,
 }
 
 /// Searches for the specified regex pattern in files within the given directory.
 ///
+/// This function performs a regex-based search across all files in the specified directory
+/// (and subdirectories), applying filters based on the provided options. It uses the 
+/// regex syntax provided by the underlying `grep` crate.
+///
 /// # Arguments
 ///
-/// * `pattern` - The regular expression pattern to search for
-/// * `directory` - The directory path to search in
-/// * `options` - Configuration options for the search operation
+/// * `pattern` - The regular expression pattern to search for. Supports standard regex syntax:
+///   - Basic literals: `apple` to match the word "apple"
+///   - Wildcards: `.` matches any character, so `a..le` matches "apple"
+///   - Character classes: `[0-9]+` matches one or more digits
+///   - Word boundaries: `\bword\b` matches "word" as a whole word
+///   - Line anchors: `^Line` matches "Line" at the start of a line, `file$` at the end
+///   - Alternation: `apple|orange` matches either "apple" or "orange"
+///   - Repetition: `a{3,}` matches 3 or more consecutive 'a's
+///   - Quantifiers: `a+` matches one or more 'a's, `a*` matches zero or more
+///   - Capture groups: `(group)` allows grouping parts of the pattern
+///
+/// * `directory` - The directory path to search in. All files within this directory and
+///   its subdirectories will be searched, subject to filtering by the options.
+///
+/// * `options` - Configuration options for the search operation:
+///   - `case_sensitive`: Controls whether the pattern is matched exactly (true) or ignoring case (false)
+///   - `respect_gitignore`: Controls whether files listed in .gitignore are skipped (true) or included (false)
 ///
 /// # Returns
 ///
-/// A vector of search results, each containing the file path, line number, and line content
-/// where a match was found.
+/// A vector of `SearchResult` objects, each containing:
+/// - The path to the file with a match
+/// - The line number where the match was found (1-based)
+/// - The full content of the line containing the match
+///
+/// The results are not sorted in any particular order.
 ///
 /// # Errors
 ///
 /// Returns an error if:
-/// - The regex pattern is invalid
-/// - There's an issue accessing the directory or files
-/// - The search operation fails
+/// - The regex pattern is invalid (e.g., unbalanced parentheses, invalid syntax)
+/// - There's an issue accessing the directory or files (e.g., permissions, not found)
+/// - The search operation fails due to I/O or other system issues
+///
+/// # Examples
+///
+/// Basic search with default options:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let results = search_files(
+///     "function", 
+///     Path::new("src"), 
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// println!("Found {} matches", results.len());
+/// ```
+///
+/// Case-sensitive search ignoring gitignore files:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let options = SearchOptions {
+///     case_sensitive: true,
+///     respect_gitignore: false,
+/// };
+///
+/// let results = search_files(
+///     "ERROR", 
+///     Path::new("logs"), 
+///     &options
+/// ).unwrap();
+///
+/// // Will only find "ERROR" in uppercase, and will include files listed in .gitignore
+/// ```
+///
+/// Using regex features:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Find all email addresses in files
+/// let email_pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}";
+/// let results = search_files(
+///     email_pattern,
+///     Path::new("data"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Find all function definitions with parameters
+/// let function_pattern = r"fn\s+\w+\s*\([^)]*\)";
+/// let results = search_files(
+///     function_pattern,
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+/// ```
 pub fn search_files(
     pattern: &str,
     directory: &Path,
