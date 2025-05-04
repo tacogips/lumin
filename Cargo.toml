@@ -30,3 +30,4 @@ env_logger = "0.11.8"
 [dev-dependencies]
 serial_test = "2.0.0"
 tempfile = "3.10.0"
+defer = "0.1.0"

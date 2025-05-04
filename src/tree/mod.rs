@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::path::Path;
 
 // Reuse the common traversal logic
+use crate::telemetry::{LogMessage, log_with_context};
 use crate::traverse::common::{build_walk, is_hidden_path};
-use crate::telemetry::{log_with_context, LogMessage};
 
 /// Configuration options for directory tree operations.
 #[derive(Debug, Clone)]
@@ -82,10 +82,8 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
                     LogMessage {
                         message: format!("Error walking directory: {}", err),
                         module: "tree",
-                        context: Some(vec![
-                            ("directory", directory.display().to_string()),
-                        ]),
-                    }
+                        context: Some(vec![("directory", directory.display().to_string())]),
+                    },
                 );
                 continue;
             }

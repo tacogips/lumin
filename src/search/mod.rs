@@ -6,7 +6,7 @@
 //!
 //! The search functionality uses regular expressions for advanced pattern matching,
 //! supporting features such as:
-//! 
+//!
 //! - Basic literal matching (e.g., `apple`)
 //! - Wildcards (e.g., `a..le` to match "apple")
 //! - Character classes (e.g., `[0-9]+` to match one or more digits)
@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use crate::telemetry::{log_with_context, LogMessage};
+use crate::telemetry::{LogMessage, log_with_context};
 
 /// Configuration options for file search operations.
 ///
@@ -56,7 +56,7 @@ use crate::telemetry::{log_with_context, LogMessage};
 /// ```
 pub struct SearchOptions {
     /// Whether the search should be case sensitive.
-    /// 
+    ///
     /// When `true`, matches will only be found when the exact case matches.
     /// When `false` (default), matches will be found regardless of letter case.
     ///
@@ -67,15 +67,15 @@ pub struct SearchOptions {
     pub case_sensitive: bool,
 
     /// Whether to respect .gitignore files when determining which files to search.
-    /// 
+    ///
     /// When `true` (default), files listed in .gitignore will be excluded from the search.
     /// When `false`, all files will be searched, including those that would normally be ignored.
     ///
     /// # Examples
     ///
-    /// - With `respect_gitignore: true`, searching will skip files like .git/, node_modules/, 
+    /// - With `respect_gitignore: true`, searching will skip files like .git/, node_modules/,
     ///   .tmp, or any patterns specified in .gitignore files
-    /// - With `respect_gitignore: false`, searching will include all files, even those listed 
+    /// - With `respect_gitignore: false`, searching will include all files, even those listed
     ///   in .gitignore files
     pub respect_gitignore: bool,
 }
@@ -107,7 +107,7 @@ impl Default for SearchOptions {
 /// match search_files(pattern, directory, &options) {
 ///     Ok(results) => {
 ///         for result in results {
-///             println!("Found '{}' in {}:{}: {}", 
+///             println!("Found '{}' in {}:{}: {}",
 ///                      pattern,
 ///                      result.file_path.display(),
 ///                      result.line_number,
@@ -141,7 +141,7 @@ pub struct SearchResult {
 /// Searches for the specified regex pattern in files within the given directory.
 ///
 /// This function performs a regex-based search across all files in the specified directory
-/// (and subdirectories), applying filters based on the provided options. It uses the 
+/// (and subdirectories), applying filters based on the provided options. It uses the
 /// regex syntax provided by the underlying `grep` crate.
 ///
 /// # Arguments
@@ -188,8 +188,8 @@ pub struct SearchResult {
 /// use std::path::Path;
 ///
 /// let results = search_files(
-///     "function", 
-///     Path::new("src"), 
+///     "function",
+///     Path::new("src"),
 ///     &SearchOptions::default()
 /// ).unwrap();
 ///
@@ -207,8 +207,8 @@ pub struct SearchResult {
 /// };
 ///
 /// let results = search_files(
-///     "ERROR", 
-///     Path::new("logs"), 
+///     "ERROR",
+///     Path::new("logs"),
 ///     &options
 /// ).unwrap();
 ///
@@ -271,10 +271,8 @@ pub fn search_files(
                     LogMessage {
                         message: format!("Failed to open file: {}", e),
                         module: "search",
-                        context: Some(vec![
-                            ("file_path", file_path.display().to_string()),
-                        ]),
-                    }
+                        context: Some(vec![("file_path", file_path.display().to_string())]),
+                    },
                 );
                 continue;
             }
@@ -350,10 +348,8 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
                     LogMessage {
                         message: format!("Error walking directory: {}", err),
                         module: "search",
-                        context: Some(vec![
-                            ("directory", directory.display().to_string()),
-                        ]),
-                    }
+                        context: Some(vec![("directory", directory.display().to_string())]),
+                    },
                 );
             }
         }

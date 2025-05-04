@@ -12,7 +12,7 @@
 //! - Character classes: `[abc]` matches any character in the set
 //! - Negated character classes: `[!0-9]` matches any character not in the set
 //! - Brace expansion: `{txt,md}` matches either "txt" or "md"
-//! - Complex directory patterns: `**/dir/*/*.txt` 
+//! - Complex directory patterns: `**/dir/*/*.txt`
 //!
 //! For examples and more details on pattern syntax, see the `traverse_directory` function.
 
@@ -25,8 +25,8 @@ use std::path::{Path, PathBuf};
 
 // Common utilities for traverse and tree operations
 pub mod common;
+use crate::telemetry::{LogMessage, log_with_context};
 use common::{build_walk, is_hidden_path};
-use crate::telemetry::{log_with_context, LogMessage};
 
 /// Configuration options for directory traversal operations.
 ///
@@ -96,11 +96,11 @@ pub struct TraverseOptions {
     pub only_text_files: bool,
 
     /// Optional pattern to filter files by path.
-    /// 
+    ///
     /// Supports two types of patterns:
     /// - Glob patterns (e.g., "*.rs", "**/*.txt") with special characters like *, ?, [], etc.
     /// - Simple substring patterns (e.g., "README", "config") for searching within file paths
-    /// 
+    ///
     /// The pattern type is automatically detected based on glob special characters.
     /// Pattern matching respects the `case_sensitive` setting.
     ///
@@ -420,10 +420,8 @@ pub fn traverse_directory(
                     LogMessage {
                         message: format!("Error walking directory: {}", err),
                         module: "traverse",
-                        context: Some(vec![
-                            ("directory", directory.display().to_string()),
-                        ]),
-                    }
+                        context: Some(vec![("directory", directory.display().to_string())]),
+                    },
                 );
             }
         }
