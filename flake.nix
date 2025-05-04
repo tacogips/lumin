@@ -53,6 +53,7 @@
             pkgs.nodejs
             pkgs.nodePackages.npm
             pkgs.go-task
+            pkgs.cargo-machete
           ];
 
           # Add OpenSSL configuration
