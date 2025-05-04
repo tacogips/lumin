@@ -95,7 +95,7 @@
         # Simple package definition
         packages.default = buildRustPackageCustom {
           pname = "lumin";
-          version = "0.1.4";
+          version = "0.1.5";
           src = ./.;
 
           # Basic cargo lock configuration
