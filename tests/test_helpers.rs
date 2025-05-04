@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 // The main test directory
 pub const TEST_DIR: &str = "tests/test_dir_1";

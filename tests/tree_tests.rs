@@ -1,5 +1,5 @@
 use anyhow::Result;
-use lumin::tree::{DirectoryTree, Entry, TreeOptions, generate_tree};
+use lumin::tree::{Entry, TreeOptions, generate_tree};
 use serial_test::serial;
 use std::path::Path;
 
