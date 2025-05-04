@@ -8,6 +8,10 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    crane = {
+      url = "github:ipetkov/crane/v0.17.3";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -16,6 +20,7 @@
       nixpkgs,
       flake-utils,
       fenix,
+      crane,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -27,6 +32,9 @@
           file = ./rust-toolchain.toml;
           sha256 = "sha256-AJ6LX/Q/Er9kS15bn9iflkUwcgYqRQxiOIL2ToVAXaU=";
         };
+
+        # Create a crane lib with our rust-toolchain
+        craneLib = (crane.mkLib pkgs).overrideToolchain rust-toolchain;
 
         # Create a modified buildRustPackage that skips the problematic steps
         buildRustPackageCustom =
@@ -40,52 +48,39 @@
               doCheck = false;
             }
           );
-          
-        # Build cargo-machete with the same rust-toolchain version
-        cargo-machete = pkgs.fetchFromGitHub {
-          owner = "bnjbvr";
-          repo = "cargo-machete";
-          rev = "v0.8.0";
-          sha256 = "sha256-0vlau3leAAonV5E9NAtSqw45eKoZBzHx0BmoEY86Eq8=";
+
+        # Build cargo-machete with the same rust-toolchain
+        cargo-machete = craneLib.buildPackage {
+          pname = "cargo-machete";
+          version = "0.8.0";
+
+          src = pkgs.fetchCrate {
+            pname = "cargo-machete";
+            version = "0.8.0";
+            sha256 = "sha256-EMU/ZegrNBzDtjifdVlHP/P9hNJJ//SDDwlB7uo1sY0=";
+          };
+
+          # Ensure the binary is installed in the expected location
+          cargoExtraArgs = "--bin cargo-machete";
+
+          doCheck = false;
         };
-        
-        # Shell script to build and run cargo-machete with the specific toolchain
-        cargo-machete-wrapper = pkgs.writeShellScriptBin "cargo-machete" ''
-          # Use the specific rust-toolchain version
-          export PATH=${rust-toolchain}/bin:$PATH
-          
-          # Create a temporary build directory
-          TEMP_DIR=$(mktemp -d)
-          trap "rm -rf $TEMP_DIR" EXIT
-          
-          # Copy source to temporary directory
-          cp -r ${cargo-machete}/* $TEMP_DIR/
-          cd $TEMP_DIR
-          
-          # Build with the specific toolchain
-          if [ ! -f ~/.cargo/.cargo-machete-built ]; then
-            echo "Building cargo-machete with specific Rust toolchain..."
-            cargo build --release
-            cp target/release/cargo-machete ~/.cargo/bin/
-            touch ~/.cargo/.cargo-machete-built
-          fi
-          
-          # Run the installed binary
-          exec ~/.cargo/bin/cargo-machete "$@"
-        '';
+
       in
       {
         # Development shell with Rust toolchain
-        devShells.default = pkgs.mkShell {
+        devShells.default = craneLib.devShell {
           packages = [
-            rust-toolchain
             pkgs.nixpkgs-fmt
             pkgs.openssl
             pkgs.pkg-config
             pkgs.nodejs
             pkgs.nodePackages.npm
             pkgs.go-task
-            cargo-machete-wrapper
+          ];
+
+          inputsFrom = [
+            cargo-machete
           ];
 
           # Add OpenSSL configuration
@@ -93,6 +88,7 @@
             export OPENSSL_DIR=${pkgs.openssl.dev}
             export OPENSSL_LIB_DIR=${pkgs.openssl.out}/lib
             export OPENSSL_INCLUDE_DIR=${pkgs.openssl.dev}/include
+
             echo "Shell loaded successfully with OpenSSL configuration"
           '';
         };
