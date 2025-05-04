@@ -37,10 +37,15 @@ This document describes the implementation of the lumin utility, focusing on des
 ### Traverse Functionality (`traverse/mod.rs`)
 - **Description**: Traverses directories and lists files using the `ignore` crate
 - **Key components**:
-  - `TraverseOptions`: Controls case sensitivity, gitignore respect, and text-only filtering
+  - `TraverseOptions`: Controls case sensitivity, gitignore respect, text-only filtering, and pattern matching
   - `TraverseResult`: Contains file path and file type
   - `is_hidden()`: Detects hidden files and files in hidden directories
   - `traverse_directory()`: Main directory traversal function
+- **Pattern matching**:
+  - Supports glob patterns (wildcards, character classes, brace expansion)
+  - Supports substring patterns for simpler searches
+  - Automatically selects appropriate matching strategy
+  - Respects case sensitivity settings
 
 ### View Functionality (`view/mod.rs`)
 - **Description**: Displays file contents with metadata using the `infer` crate
@@ -216,6 +221,30 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### 2025-05-05: Enhanced Pattern Matching Documentation and Tests
+- Expanded documentation and tests for the traverse module's pattern matching functionality
+- Changes:
+  - Added comprehensive unit tests for glob pattern matching with all supported features
+  - Improved Rustdoc documentation with detailed explanations and examples
+  - Structured documentation by pattern types (wildcards, character classes, etc.)
+  - Added resilient testing for various filesystem environments
+- Benefits:
+  - Better understanding of pattern matching capabilities for users
+  - More thorough test coverage for all pattern matching edge cases
+  - Clear examples of how to use glob patterns effectively
+  - Improved reliability of tests across different environments
+- Implementation details:
+  - Tested pattern features including:
+    - Basic wildcards (`*` and `?`)
+    - Recursive directory matching (`**`)
+    - Character classes (`[a-z]`, `[!0-9]`, etc.)
+    - Brace expansion (`{txt,md}`)
+    - Complex combinations of multiple pattern features
+    - Case-sensitive and case-insensitive matching
+    - Special characters and boundary conditions
+  - Organized documentation to highlight both simple and advanced use cases
+  - Made tests more resilient to filesystem limitations and environment differences
+
 ### 2025-05-05: Simplified Logging System to Use env_logger
 - Removed tracing dependencies in favor of a simpler logging solution
 - Changes:
@@ -317,6 +346,7 @@ This document describes the implementation of the lumin utility, focusing on des
 - Consider adding parallelism for faster searches in large codebases
 - Implement caching for frequently accessed directories
 - Add progress indicators for long-running operations
+- Optimize pattern matching for large directory structures
 
 ### Feature Enhancements
 - Add support for other VCS ignore files (.hgignore, .svnignore)
@@ -324,13 +354,17 @@ This document describes the implementation of the lumin utility, focusing on des
 - Add interactive mode for viewing large files
 - Support for archive traversal (zip, tar)
 - Add pattern matching for tree command (similar to traverse command)
+- Support for negative pattern matching (exclude patterns)
+- Advanced pattern filtering with custom pattern combinations
 
 ### Output Formats
 - Add additional output formats (CSV, plain text)
 - Support for colorized output
 - Code-aware output formatting based on file type
+- Pattern-aware result highlighting
 
 ### Code Quality
 - Continue improving error messages
 - Add more detailed documentation
 - Consider breaking large modules into smaller, more focused ones
+- Further enhance test resilience across different environments
