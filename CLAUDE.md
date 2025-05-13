@@ -202,6 +202,16 @@ In the ServerHandler's get_info() implementation:
 
 ## Development Guidelines
 
+### Version Bumping
+
+When bumping the version of this library, you must update the version number in all three of these locations:
+
+1. `Cargo.toml`: Update the `version` field in the package metadata section
+2. `flake.nix`: Update the `version` in the `buildRustPackageCustom` configuration
+3. `main.rs`: Update the version string in the `clap` command definition
+
+Always ensure all three locations are synchronized to the same version number to maintain consistency across the codebase and package distributions.
+
 ### Library Source Code References
 
 When working with this project's dependencies:
