@@ -24,6 +24,12 @@
 //!   - `**/*.rs` matches all Rust files in any subdirectory
 //!   - `src/**/test/*.rs` matches all Rust files in any `test` directory under `src`
 //!
+//! - **Prefix matching**: Using wildcards at the end of a pattern to match file prefixes
+//!   - `config_*` matches only files starting with "config_" in the current directory
+//!   - `**/prefix_*` matches files starting with "prefix_" in any directory
+//!   - `src/lib_*` matches files starting with "lib_" in the src directory
+//!   - `module_*.{rs,ts}` matches files starting with "module_" with .rs or .ts extensions
+//!
 //! - **Character classes**: `[abc]` matches any character in the set
 //!   - `file[123].txt` matches `file1.txt`, `file2.txt`, and `file3.txt`
 //!   - `[a-z]*.txt` matches any file starting with a lowercase letter
@@ -148,6 +154,12 @@ pub struct TraverseOptions {
     /// - `file?.txt` - Matches file1.txt or fileA.txt, but not file10.txt (? matches one character)
     /// - `src/*.rs` - All Rust files in the src directory
     /// - `**/test_*.rs` - All Rust files starting with "test_" in any directory
+    ///
+    /// ### Prefix Matching
+    /// - `prefix_*` - Matches all files starting with "prefix_" in the current directory only
+    /// - `**/prefix_*` - Matches all files starting with "prefix_" in any directory
+    /// - `src/module_*` - Matches files starting with "module_" in the src directory
+    /// - `config_*.{json,yaml}` - Matches config files with specific prefix and extensions
     ///
     /// ### Character Classes
     /// - `file[123].txt` - Matches file1.txt, file2.txt, and file3.txt only

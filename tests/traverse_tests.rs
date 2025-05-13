@@ -1,4 +1,5 @@
 use anyhow::Result;
+use defer::defer;
 use lumin::traverse::{TraverseOptions, traverse_directory};
 use serial_test::serial;
 use std::path::Path;
@@ -278,6 +279,63 @@ mod traverse_tests {
                 .to_lowercase()
                 .contains("contributing")
         }));
+
+        Ok(())
+    }
+    
+    /// Test traversal with prefix pattern matching
+    #[test]
+    #[serial]
+    fn test_traverse_with_prefix_pattern() -> Result<()> {
+        let _env = TestEnvironment::setup()?;
+
+        // Create test files for prefix matching
+        let prefix_files = [
+            format!("{}/test_prefix_file1.txt", TEST_DIR),
+            format!("{}/test_prefix_file2.md", TEST_DIR),
+            format!("{}/other_file.txt", TEST_DIR),
+            format!("{}/docs/test_prefix_file3.txt", TEST_DIR),
+        ];
+
+        // Create the test files
+        for file_path in &prefix_files {
+            let path = Path::new(file_path);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(path, format!("Test content for {}", file_path))?;
+        }
+
+        // Cleanup function to remove the files after the test
+        let _cleanup = defer::defer(|| {
+            for file_path in &prefix_files {
+                let _ = std::fs::remove_file(file_path);
+            }
+        });
+
+        // Test root-level prefix matching
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("test_prefix_*".to_string());
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should only match prefix files at the root level
+        assert_eq!(results.len(), 2, "Should match exactly 2 files at the root level");
+
+        assert!(results.iter().any(|r| r.file_path.to_string_lossy().ends_with("test_prefix_file1.txt")));
+        assert!(results.iter().any(|r| r.file_path.to_string_lossy().ends_with("test_prefix_file2.md")));
+        assert!(!results.iter().any(|r| r.file_path.to_string_lossy().contains("docs/test_prefix_file3.txt")));
+
+        // Test recursive prefix matching
+        let mut options = TraverseOptions::default();
+        options.pattern = Some("**/test_prefix_*".to_string());
+
+        let results = traverse_directory(Path::new(TEST_DIR), &options)?;
+
+        // Should match all 3 prefix files in any directory
+        assert_eq!(results.len(), 3, "Should match all 3 files with the prefix in any directory");
+        
+        assert!(results.iter().any(|r| r.file_path.to_string_lossy().contains("docs/test_prefix_file3.txt")));
 
         Ok(())
     }
