@@ -39,11 +39,13 @@
 //! - **Grouping**: `(ab)+` matches "ab", "abab", etc.
 //! - **Non-capturing groups**: `(?:abc)+` same as above but doesn't capture
 //!
-//! ### Advanced Features
-//! - **Lookahead**: `x(?=y)` matches "x" only if followed by "y"
-//! - **Negative lookahead**: `x(?!y)` matches "x" only if not followed by "y"
-//! - **Lookbehind**: `(?<=y)x` matches "x" only if preceded by "y"
-//! - **Negative lookbehind**: `(?<!y)x` matches "x" only if not preceded by "y"
+//! ### Other Regex Features
+//! - **Capturing groups**: `(pattern)` captures and remembers matched text
+//! - **Non-capturing groups**: `(?:pattern)` groups without capturing
+//! - **Case-insensitive flag**: The search supports case-insensitive mode via options
+//! 
+//! > **Note**: The search functionality uses the `grep` crate which doesn't support lookaround assertions
+//! > (lookahead, lookbehind). If these features are needed, consider post-processing results.
 //!
 //! ### Common Patterns
 //! - **Email**: `[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}`
@@ -254,11 +256,11 @@ pub struct SearchResult {
 /// - `(...)` for grouping: `(abc)+` matches "abc", "abcabc", etc.
 /// - `(?:...)` for non-capturing groups: `(?:abc)+` same as above but doesn't capture
 ///
-/// ### Lookaround Assertions
-/// - `(?=...)` positive lookahead: `foo(?=bar)` matches "foo" only if followed by "bar"
-/// - `(?!...)` negative lookahead: `foo(?!bar)` matches "foo" only if not followed by "bar"
-/// - `(?<=...)` positive lookbehind: `(?<=foo)bar` matches "bar" only if preceded by "foo"
-/// - `(?<!...)` negative lookbehind: `(?<!foo)bar` matches "bar" only if not preceded by "foo"
+/// ### Limitations
+/// - The search functionality is based on the `grep` crate, which does not support lookaround assertions
+///   (lookahead/lookbehind). If these features are needed, consider post-processing the results.
+/// - Capturing groups are supported but not directly accessible in results
+/// - Some advanced regex features may not be available; see the grep crate documentation for details
 ///
 /// ### Special Pattern Flags
 /// - For case-insensitive matching, use the option parameter rather than embedding flags
@@ -617,7 +619,7 @@ pub struct SearchResult {
 /// let results = search_files(todo_pattern, Path::new("src"), &SearchOptions::default()).unwrap();
 ///
 /// // Find JSON keys and their values
-/// let json_pattern = r"\"([\w.-]+)\"\s*:\s*\"([^\"]*)\"|\"([\w.-]+)\"\s*:\s*(\d+|true|false|null)";
+/// let json_pattern = r#""([\w.-]+)"\s*:\s*"([^"]*)"|("[\w.-]+")\s*:\s*(\d+|true|false|null)"#;
 /// let results = search_files(json_pattern, Path::new("config"), &SearchOptions::default()).unwrap();
 ///
 /// // Find all markdown headers
