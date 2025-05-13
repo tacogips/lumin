@@ -751,10 +751,121 @@ pub fn search_files(
 
         // Process the matches
         for (line_number, content) in matches {
+            let (line_content, content_omitted) = if let Some(omit_num) = options.match_content_omit_num {
+                // Apply content omission
+                if let Ok(matcher_match) = matcher.find(content.as_bytes()) {
+                    // Create a new string with omitted content markers
+                    let mut omitted_content = String::new();
+                    let mut last_end = 0;
+                    let mut omitted = false;
+                    
+                    // Find all matches in the line
+                    let mut matches_iter = matcher.find_iter(content.as_bytes());
+                    let mut match_ranges = Vec::new();
+                    
+                    while let Ok(Some(m)) = matches_iter.next() {
+                        let start = m.start();
+                        let end = m.end();
+                        
+                        // Ensure valid UTF-8 boundaries
+                        // We need to find the UTF-8 character boundary at or before start
+                        let utf8_start = content[..start].char_indices()
+                            .map(|(i, _)| i)
+                            .filter(|&i| i <= start)
+                            .last()
+                            .unwrap_or(0);
+                        
+                        // We need to find the UTF-8 character boundary at or after end
+                        let utf8_end = if end < content.len() {
+                            content[end..].char_indices()
+                                .map(|(i, _)| i + end)
+                                .next()
+                                .unwrap_or(content.len())
+                        } else {
+                            content.len()
+                        };
+                        
+                        match_ranges.push((utf8_start, utf8_end));
+                    }
+                    
+                    // No matches found (should not happen, but handle it anyway)
+                    if match_ranges.is_empty() {
+                        (content, false)
+                    } else {
+                        // Process each match and its context
+                        for (start, end) in match_ranges {
+                            // Calculate start context boundary, counting backwards omit_num UTF-8 characters
+                            let context_start = if start > 0 {
+                                let char_count = content[..start].chars().count();
+                                let chars_to_keep = if char_count > omit_num {
+                                    char_count - omit_num
+                                } else {
+                                    0
+                                };
+                                
+                                content[..start].char_indices()
+                                    .map(|(i, _)| i)
+                                    .nth(chars_to_keep)
+                                    .unwrap_or(0)
+                            } else {
+                                0
+                            };
+                            
+                            // Add omission marker if needed
+                            if context_start > last_end {
+                                if last_end > 0 {
+                                    omitted_content.push_str("<omit>");
+                                    omitted = true;
+                                }
+                                omitted_content.push_str(&content[context_start..start]);
+                            } else if last_end < context_start {
+                                omitted_content.push_str(&content[last_end..context_start]);
+                            } else if last_end < start {
+                                omitted_content.push_str(&content[last_end..start]);
+                            }
+                            
+                            // Add the match itself
+                            omitted_content.push_str(&content[start..end]);
+                            
+                            // Calculate end context boundary, counting forward omit_num UTF-8 characters
+                            let context_end = if end < content.len() {
+                                let chars_after = content[end..].chars().take(omit_num).count();
+                                content[end..].char_indices()
+                                    .map(|(i, _)| i + end)
+                                    .nth(chars_after)
+                                    .unwrap_or(content.len())
+                            } else {
+                                content.len()
+                            };
+                            
+                            // Add the context after the match
+                            omitted_content.push_str(&content[end..context_end]);
+                            
+                            last_end = context_end;
+                        }
+                        
+                        // Add final omission marker if needed
+                        if last_end < content.len() {
+                            omitted_content.push_str("<omit>");
+                            omitted = true;
+                        }
+                        
+                        (omitted_content, omitted)
+                    }
+                } else {
+                    // No match found (should not happen, but handle it anyway)
+                    (content, false)
+                }
+            } else {
+                // No omission requested
+                (content, false)
+            };
+            
             results.push(SearchResult {
                 file_path: file_path.clone(),
                 line_number,
-                line_content: content,
+                line_content,
+                content_omitted,
             });
         }
     }
