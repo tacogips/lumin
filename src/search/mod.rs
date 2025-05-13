@@ -146,6 +146,16 @@ pub struct SearchOptions {
     /// Note: If multiple matches occur on the same line, each match will preserve its surrounding
     /// context as specified, which means the total line content may exceed `n*2` characters.
     ///
+    /// # Behavior
+    /// 
+    /// The entire matched pattern will always be preserved, even if it's longer than `n` characters.
+    /// This ensures that you can always see the complete match, which is important for context.
+    /// 
+    /// The `match_content_omit_num` parameter controls how much context outside the match is shown,
+    /// not whether the match itself is truncated. For example, if `match_content_omit_num` is set to 5
+    /// and the match is "verylongmatch", you will still see the entire match, plus 5 characters before
+    /// and after it.
+    ///
     /// # Examples
     ///
     /// - `match_content_omit_num: Some(20)` will keep only 20 characters before and after each match

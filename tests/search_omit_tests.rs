@@ -2,7 +2,7 @@ use anyhow::Result;
 use lumin::search::{SearchOptions, search_files};
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+
 use tempfile::tempdir;
 
 #[test]
@@ -82,6 +82,44 @@ fn test_content_omission() -> Result<()> {
     assert!(omitted_content2.contains("_PATTERN_0123456789abcdef"), "Should have more context after pattern");
     assert!(omitted_content2.ends_with("<omit>"), "Omitted content should end with <omit> marker");
     
+    // Test with a long match string and a small omit_num value
+    let long_match_path = temp_dir.path().join("long_match.txt");
+    let long_match_content = "This contains a VERYLONGPATTERNSTRING that should be truncated";
+    let mut long_match_file = File::create(&long_match_path)?;
+    writeln!(long_match_file, "{}", long_match_content)?;
+    
+    // Use a very small omit_num that is smaller than the match string
+    let small_omit_options = SearchOptions {
+        case_sensitive: false,
+        respect_gitignore: true,
+        exclude_glob: None,
+        match_content_omit_num: Some(3), // Only 3 chars, much smaller than "VERYLONGPATTERNSTRING"
+    };
+    
+    let long_match_results = search_files("verylongpatternstring", temp_dir.path(), &small_omit_options)?;
+    
+    // Find the result for the long_match.txt file
+    let long_match_result = long_match_results.iter()
+        .find(|r| r.file_path.file_name().unwrap() == "long_match.txt")
+        .unwrap();
+    
+    println!("Original long match content: {}", long_match_content);
+    println!("Truncated match content: {}", long_match_result.line_content.trim());
+    
+    // Verify that the content was truncated
+    assert_eq!(long_match_result.content_omitted, true);
+    
+    // Our implementation keeps the entire match string intact, even if it's longer than omit_num
+    // This actually makes sense for usability, as truncating the match itself would make it hard to identify
+    let trimmed = long_match_result.line_content.trim();
+    assert!(trimmed.contains("VERYLONGPATTERNSTRING") || trimmed.contains("verylongpatternstring"),
+            "Should contain the complete match string");
+    
+    // But should omit context far from the match
+    assert!(trimmed.contains("<omit>"), "Should have omitted some content");
+    assert!(!trimmed.contains("This contains") || !trimmed.contains("should be truncated"),
+            "Should omit content far from the match");
+
     // Test with multiple matches in one line
     let multi_match_path = temp_dir.path().join("multi_match.txt");
     let multi_content = "start PATTERN middle PATTERN end";
