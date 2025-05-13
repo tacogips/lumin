@@ -86,13 +86,15 @@ use crate::telemetry::{LogMessage, log_with_context};
 ///     case_sensitive: true,
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
+///     match_content_omit_num: None,
 /// };
 ///
-/// // Case-insensitive search, respecting gitignore files
+/// // Case-insensitive search, respecting gitignore files, with content truncation
 /// let mixed_options = SearchOptions {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
+///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches
 /// };
 /// ```
 pub struct SearchOptions {
@@ -133,6 +135,21 @@ pub struct SearchOptions {
     ///   both node_modules and .git directories and their contents
     /// - `exclude_glob: None` means no files will be excluded based on glob patterns
     pub exclude_glob: Option<Vec<String>>,
+    
+    /// Optional setting to limit the number of characters displayed around matches in search results.
+    ///
+    /// When set to `Some(n)`, the line content in search results will only include `n` UTF-8 characters
+    /// before and after each matched pattern. Characters outside this range will be omitted.
+    /// When set to `None` (default), the entire line content is preserved.
+    ///
+    /// Note: If multiple matches occur on the same line, each match will preserve its surrounding
+    /// context as specified, which means the total line content may exceed `n*2` characters.
+    ///
+    /// # Examples
+    ///
+    /// - `match_content_omit_num: Some(20)` will keep only 20 characters before and after each match
+    /// - `match_content_omit_num: None` will retain the complete line content without truncation
+    pub match_content_omit_num: Option<usize>,
 }
 
 impl Default for SearchOptions {
@@ -141,6 +158,7 @@ impl Default for SearchOptions {
             case_sensitive: false,
             respect_gitignore: true,
             exclude_glob: None,
+            match_content_omit_num: None,
         }
     }
 }
@@ -163,11 +181,12 @@ impl Default for SearchOptions {
 /// match search_files(pattern, directory, &options) {
 ///     Ok(results) => {
 ///         for result in results {
-///             println!("Found '{}' in {}:{}: {}",
+///             println!("Found '{}' in {}:{}: {}{}",
 ///                      pattern,
 ///                      result.file_path.display(),
 ///                      result.line_number,
-///                      result.line_content.trim());
+///                      result.line_content.trim(),
+///                      if result.content_omitted { " (truncated)" } else { "" });
 ///         }
 ///     },
 ///     Err(e) => eprintln!("Search error: {}", e),
@@ -191,7 +210,20 @@ pub struct SearchResult {
     ///
     /// This contains the entire line where the match was found, not just the
     /// matched substring. The matched pattern may appear anywhere within this string.
+    /// 
+    /// If `match_content_omit_num` was set in the search options, this might contain
+    /// only partial line content, with characters beyond the specified limit around each
+    /// match omitted. Check the `content_omitted` field to determine if content was truncated.
     pub line_content: String,
+    
+    /// Indicates whether content was omitted from the line_content.
+    ///
+    /// When `true`, it means that the line_content has been truncated and only includes
+    /// the specified number of characters around each match as configured by
+    /// `match_content_omit_num` in the search options.
+    /// 
+    /// When `false`, the entire original line content is preserved.
+    pub content_omitted: bool,
 }
 
 /// Searches for the specified regex pattern in files within the given directory.
@@ -315,6 +347,7 @@ pub struct SearchResult {
 ///     case_sensitive: true,
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
+///     match_content_omit_num: None,
 /// };
 ///
 /// let results = search_files(
@@ -335,6 +368,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
+///     match_content_omit_num: Some(50), // Limit content to 50 chars before and after matches
 /// };
 ///
 /// let results = search_files(
@@ -344,7 +378,37 @@ pub struct SearchResult {
 /// ).unwrap();
 ///
 /// // Will find "password" in any case, respecting gitignore files,
-/// // but excluding all JSON files and Rust files in test directories
+/// // but excluding all JSON files and Rust files in test directories,
+/// // and limit the displayed content to 50 characters around each match
+/// ```
+///
+/// Using content omission to focus on matches in long lines:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     match_content_omit_num: Some(20), // Only show 20 characters before and after matches
+/// };
+///
+/// let results = search_files(
+///     "important_pattern",
+///     Path::new("src"),
+///     &options
+/// ).unwrap();
+///
+/// for result in results {
+///     println!("{}: {}{}", 
+///         result.file_path.display(),
+///         result.line_content,
+///         if result.content_omitted { " (truncated)" } else { "" });
+/// }
+/// 
+/// // Will find "important_pattern" in any case, respecting gitignore files,
+/// // but only showing 20 characters of context before and after each match
 /// ```
 ///
 /// ## Regex Pattern Examples
