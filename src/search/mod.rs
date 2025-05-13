@@ -19,6 +19,7 @@
 //! For more complex searching, see the examples in the `search_files` function.
 
 use anyhow::{Context, Result};
+use globset::{self, GlobSetBuilder, GlobBuilder};
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
@@ -78,6 +79,20 @@ pub struct SearchOptions {
     /// - With `respect_gitignore: false`, searching will include all files, even those listed
     ///   in .gitignore files
     pub respect_gitignore: bool,
+    
+    /// Optional list of glob patterns for files to exclude from the search.
+    ///
+    /// When provided, files matching any of these patterns will be excluded from the search,
+    /// even if they would otherwise be included based on other criteria.
+    ///
+    /// # Examples
+    ///
+    /// - `exclude_glob: Some(vec!["*.json".to_string()])` will exclude all JSON files
+    /// - `exclude_glob: Some(vec!["test/**/*.rs".to_string()])` will exclude all Rust files in any test directory
+    /// - `exclude_glob: Some(vec!["**/node_modules/**".to_string(), "**/.git/**".to_string()])` will exclude
+    ///   both node_modules and .git directories and their contents
+    /// - `exclude_glob: None` means no files will be excluded based on glob patterns
+    pub exclude_glob: Option<Vec<String>>,
 }
 
 impl Default for SearchOptions {
@@ -85,6 +100,7 @@ impl Default for SearchOptions {
         Self {
             case_sensitive: false,
             respect_gitignore: true,
+            exclude_glob: None,
         }
     }
 }
@@ -163,6 +179,7 @@ pub struct SearchResult {
 /// * `options` - Configuration options for the search operation:
 ///   - `case_sensitive`: Controls whether the pattern is matched exactly (true) or ignoring case (false)
 ///   - `respect_gitignore`: Controls whether files listed in .gitignore are skipped (true) or included (false)
+///   - `exclude_glob`: Optional list of glob patterns to exclude files from the search
 ///
 /// # Returns
 ///
@@ -204,6 +221,7 @@ pub struct SearchResult {
 /// let options = SearchOptions {
 ///     case_sensitive: true,
 ///     respect_gitignore: false,
+///     exclude_glob: None,
 /// };
 ///
 /// let results = search_files(
@@ -213,6 +231,27 @@ pub struct SearchResult {
 /// ).unwrap();
 ///
 /// // Will only find "ERROR" in uppercase, and will include files listed in .gitignore
+/// ```
+///
+/// Using exclude_glob to skip specific file types:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
+/// };
+///
+/// let results = search_files(
+///     "password",
+///     Path::new("src"),
+///     &options
+/// ).unwrap();
+///
+/// // Will find "password" in any case, respecting gitignore files,
+/// // but excluding all JSON files and Rust files in test directories
 /// ```
 ///
 /// Using regex features:
@@ -225,15 +264,20 @@ pub struct SearchResult {
 /// let results = search_files(
 ///     email_pattern,
 ///     Path::new("data"),
-///     &SearchOptions::default()
+///     &SearchOptions::default() // Uses default options (exclude_glob is None)
 /// ).unwrap();
 ///
-/// // Find all function definitions with parameters
+/// // Find all function definitions with parameters, excluding test files
 /// let function_pattern = r"fn\s+\w+\s*\([^)]*\)";
+/// let options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
+/// };
 /// let results = search_files(
 ///     function_pattern,
 ///     Path::new("src"),
-///     &SearchOptions::default()
+///     &options
 /// ).unwrap();
 /// ```
 pub fn search_files(
@@ -306,7 +350,7 @@ pub fn search_files(
 
 /// Collects a list of files within the given directory that should be included in the search.
 ///
-/// This function applies gitignore filtering based on the provided options.
+/// This function applies both gitignore filtering and exclude_glob filtering based on the provided options.
 ///
 /// # Arguments
 ///
@@ -319,7 +363,8 @@ pub fn search_files(
 ///
 /// # Errors
 ///
-/// Returns an error if there's an issue accessing the directory or files
+/// Returns an error if there's an issue accessing the directory or files, or if there's an error
+/// compiling the exclude glob patterns
 fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
@@ -333,12 +378,44 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
         builder.git_exclude(false); // Don't use git exclude files
         builder.git_global(false); // Don't use global git ignore
     }
+    
+    // Compile exclude glob patterns if provided
+    let glob_set = if let Some(exclude_patterns) = &options.exclude_glob {
+        if !exclude_patterns.is_empty() {
+            let mut builder = globset::GlobSetBuilder::new();
+            for pattern in exclude_patterns {
+                // Build glob with appropriate case sensitivity
+                let glob = if options.case_sensitive {
+                    globset::GlobBuilder::new(pattern).build()
+                } else {
+                    globset::GlobBuilder::new(pattern).case_insensitive(true).build()
+                }
+                .with_context(|| format!("Failed to compile glob pattern: {}", pattern))?;
+                
+                builder.add(glob);
+            }
+            Some(builder.build().context("Failed to build glob set")?)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     for result in builder.build() {
         match result {
             Ok(entry) => {
                 let path = entry.path();
                 if path.is_file() {
+                    // Skip files that match any of the exclude globs
+                    if let Some(ref glob_set) = glob_set {
+                        // Get the path relative to the search directory for better glob matching
+                        let rel_path = path.strip_prefix(directory).unwrap_or(path);
+                        if glob_set.is_match(rel_path) {
+                            // Skip this file as it matches an exclude pattern
+                            continue;
+                        }
+                    }
                     files.push(path.to_path_buf());
                 }
             }
