@@ -98,6 +98,7 @@ fn main() -> Result<()> {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
+                match_content_omit_num: None,
             };
 
             let results = search_files(pattern, directory, &options)?;
