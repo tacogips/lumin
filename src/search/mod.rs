@@ -43,7 +43,7 @@
 //! - **Capturing groups**: `(pattern)` captures and remembers matched text
 //! - **Non-capturing groups**: `(?:pattern)` groups without capturing
 //! - **Case-insensitive flag**: The search supports case-insensitive mode via options
-//! 
+//!
 //! > **Note**: The search functionality uses the `grep` crate which doesn't support lookaround assertions
 //! > (lookahead, lookbehind). If these features are needed, consider post-processing results.
 //!
@@ -58,8 +58,8 @@
 
 use anyhow::{Context, Result};
 use globset;
-use grep::regex::RegexMatcher;
 use grep::matcher::Matcher;
+use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
 use ignore::WalkBuilder;
@@ -122,7 +122,7 @@ pub struct SearchOptions {
     /// - With `respect_gitignore: false`, searching will include all files, even those listed
     ///   in .gitignore files
     pub respect_gitignore: bool,
-    
+
     /// Optional list of glob patterns for files to exclude from the search.
     ///
     /// When provided, files matching any of these patterns will be excluded from the search,
@@ -136,7 +136,7 @@ pub struct SearchOptions {
     ///   both node_modules and .git directories and their contents
     /// - `exclude_glob: None` means no files will be excluded based on glob patterns
     pub exclude_glob: Option<Vec<String>>,
-    
+
     /// Optional setting to limit the number of characters displayed around matches in search results.
     ///
     /// When set to `Some(n)`, the line content in search results will only include `n` UTF-8 characters
@@ -211,18 +211,18 @@ pub struct SearchResult {
     ///
     /// This contains the entire line where the match was found, not just the
     /// matched substring. The matched pattern may appear anywhere within this string.
-    /// 
+    ///
     /// If `match_content_omit_num` was set in the search options, this might contain
     /// only partial line content, with characters beyond the specified limit around each
     /// match omitted. Check the `content_omitted` field to determine if content was truncated.
     pub line_content: String,
-    
+
     /// Indicates whether content was omitted from the line_content.
     ///
     /// When `true`, it means that the line_content has been truncated and only includes
     /// the specified number of characters around each match as configured by
     /// `match_content_omit_num` in the search options.
-    /// 
+    ///
     /// When `false`, the entire original line content is preserved.
     pub content_omitted: bool,
 }
@@ -242,7 +242,7 @@ pub struct SearchResult {
 ///
 /// ### Basic Literals and Escaping
 /// - Simple text literals match themselves: `apple` matches "apple" anywhere in text
-/// - To match regex special characters literally, escape with backslash: 
+/// - To match regex special characters literally, escape with backslash:
 ///   - `\(` matches a literal "(" character
 ///   - `\*` matches a literal "*" character
 ///   - `\.` matches a literal "." character
@@ -402,12 +402,12 @@ pub struct SearchResult {
 /// ).unwrap();
 ///
 /// for result in results {
-///     println!("{}: {}{}", 
+///     println!("{}: {}{}",
 ///         result.file_path.display(),
 ///         result.line_content,
 ///         if result.content_omitted { " (truncated)" } else { "" });
 /// }
-/// 
+///
 /// // Will find "important_pattern" in any case, respecting gitignore files,
 /// // but only showing 20 characters of context before and after each match
 /// ```
@@ -664,6 +664,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
+///     match_content_omit_num: None,
 /// };
 /// let results = search_files(
 ///     function_pattern,
@@ -749,115 +750,149 @@ pub fn search_files(
                 }),
             )
             .with_context(|| format!("Error searching file {}", file_path.display()))?;
-
-        // Process the matches
+    
+        // Process all matches
         for (line_number, content) in matches {
-            let (line_content, content_omitted) = if let Some(omit_num) = options.match_content_omit_num {
+            // Calculate which parts of the content to keep and whether any was omitted
+            let (keep_ranges, content_omitted) = if let Some(omit_num) = options.match_content_omit_num {
                 // Apply content omission
-                // Create a new string with omitted content markers
-                let mut omitted_content = String::new();
-                let mut last_end = 0;
-                let mut omitted = false;
-                
+                let mut keep_ranges = Vec::new();
+                let mut any_omitted = false;
+        
                 // Find all matches in the line
-                let mut match_ranges = Vec::new();
-                
-                // Collect all matches using the matcher's find_iter method
+                let mut match_positions = Vec::new();
+        
+                // Collect all match positions using matcher's find_iter method
                 let _ = matcher.find_iter(content.as_bytes(), |m| {
                     let start = m.start();
                     let end = m.end();
-                    
+            
                     // Ensure valid UTF-8 boundaries
-                    // We need to find the UTF-8 character boundary at or before start
-                    let utf8_start = content[..start].char_indices()
+                    let utf8_start = content[..start]
+                        .char_indices()
                         .map(|(i, _)| i)
                         .filter(|&i| i <= start)
                         .last()
                         .unwrap_or(0);
-                    
-                    // We need to find the UTF-8 character boundary at or after end
+            
                     let utf8_end = if end < content.len() {
-                        content[end..].char_indices()
+                        content[end..]
+                            .char_indices()
                             .map(|(i, _)| i + end)
                             .next()
                             .unwrap_or(content.len())
                     } else {
                         content.len()
                     };
-                    
-                    match_ranges.push((utf8_start, utf8_end));
-                    true // Continue searching for more matches
+            
+                    match_positions.push((utf8_start, utf8_end));
+                    true // Continue searching
                 });
-                
-                // No matches found (should not happen, but handle it anyway)
-                if match_ranges.is_empty() {
-                    (content, false)
+        
+                // No matches found (shouldn't happen, but handle it anyway)
+                if match_positions.is_empty() {
+                    (vec![(0, content.len())], false)
                 } else {
-                    // Process each match and its context
-                    for (start, end) in match_ranges {
-                        // Calculate start context boundary, counting backwards omit_num UTF-8 characters
-                        let context_start = if start > 0 {
-                            let char_count = content[..start].chars().count();
+                    // Calculate context ranges for each match
+                    for (match_start, match_end) in match_positions {
+                        // Calculate context start (omit_num characters before match)
+                        let context_start = if match_start > 0 {
+                            let char_count = content[..match_start].chars().count();
                             let chars_to_keep = if char_count > omit_num {
                                 char_count - omit_num
                             } else {
                                 0
                             };
-                            
-                            content[..start].char_indices()
+                    
+                            content[..match_start]
+                                .char_indices()
                                 .map(|(i, _)| i)
                                 .nth(chars_to_keep)
                                 .unwrap_or(0)
                         } else {
                             0
                         };
-                        
-                        // Add omission marker if needed
-                        if context_start > last_end {
-                            if last_end > 0 {
-                                omitted_content.push_str("<omit>");
-                                omitted = true;
-                            }
-                            omitted_content.push_str(&content[context_start..start]);
-                        } else if last_end < context_start {
-                            omitted_content.push_str(&content[last_end..context_start]);
-                        } else if last_end < start {
-                            omitted_content.push_str(&content[last_end..start]);
-                        }
-                        
-                        // Add the match itself
-                        omitted_content.push_str(&content[start..end]);
-                        
-                        // Calculate end context boundary, counting forward omit_num UTF-8 characters
-                        let context_end = if end < content.len() {
-                            let chars_after = content[end..].chars().take(omit_num).count();
-                            content[end..].char_indices()
-                                .map(|(i, _)| i + end)
+                
+                        // Calculate context end (omit_num characters after match)
+                        let context_end = if match_end < content.len() {
+                            let chars_after = content[match_end..].chars().take(omit_num).count();
+                            content[match_end..]
+                                .char_indices()
+                                .map(|(i, _)| i + match_end)
                                 .nth(chars_after)
                                 .unwrap_or(content.len())
                         } else {
                             content.len()
                         };
-                        
-                        // Add the context after the match
-                        omitted_content.push_str(&content[end..context_end]);
-                        
-                        last_end = context_end;
+                
+                        // Add this range to our keep_ranges
+                        keep_ranges.push((context_start, context_end));
                     }
-                    
-                    // Add final omission marker if needed
-                    if last_end < content.len() {
-                        omitted_content.push_str("<omit>");
-                        omitted = true;
+            
+                    // Sort and merge overlapping ranges
+                    if !keep_ranges.is_empty() {
+                        keep_ranges.sort_by_key(|&(start, _)| start);
+                
+                        let mut merged_ranges = Vec::new();
+                        let mut current_range = keep_ranges[0];
+                
+                        for &(start, end) in keep_ranges.iter().skip(1) {
+                            if start <= current_range.1 {
+                                // Ranges overlap, merge them
+                                current_range.1 = current_range.1.max(end);
+                            } else {
+                                // No overlap, push current range and start a new one
+                                merged_ranges.push(current_range);
+                                current_range = (start, end);
+                            }
+                        }
+                        merged_ranges.push(current_range);
+                
+                        // Check if any content would be omitted
+                        if merged_ranges.len() > 1 || merged_ranges[0].0 > 0 || merged_ranges.last().unwrap().1 < content.len() {
+                            any_omitted = true;
+                        }
+                
+                        (merged_ranges, any_omitted)
+                    } else {
+                        // Fallback (shouldn't reach here)
+                        (vec![(0, content.len())], false)
                     }
-                    
-                    (omitted_content, omitted)
                 }
             } else {
                 // No omission requested
-                (content, false)
+                (vec![(0, content.len())], false)
             };
+    
+            // Build the final content string using the keep ranges
+            let line_content = if content_omitted {
+                let mut result = String::new();
+                let mut last_end = 0;
+        
+                for &(start, end) in &keep_ranges {
+                    // Add omission marker if there's a gap
+                    if start > last_end {
+                        if last_end > 0 { // Don't add marker if we're at the beginning
+                            result.push_str("<omit>");
+                        }
+                    }
             
+                    // Add the content from this range
+                    result.push_str(&content[start..end]);
+                    last_end = end;
+                }
+        
+                // Add final omission marker if needed
+                if last_end < content.len() {
+                    result.push_str("<omit>");
+                }
+        
+                result
+            } else {
+                // No omission, use the original content
+                content
+            };
+    
             results.push(SearchResult {
                 file_path: file_path.clone(),
                 line_number,
@@ -900,7 +935,7 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
         builder.git_exclude(false); // Don't use git exclude files
         builder.git_global(false); // Don't use global git ignore
     }
-    
+
     // Compile exclude glob patterns if provided
     let glob_set = if let Some(exclude_patterns) = &options.exclude_glob {
         if !exclude_patterns.is_empty() {
@@ -910,10 +945,12 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
                 let glob = if options.case_sensitive {
                     globset::GlobBuilder::new(pattern).build()
                 } else {
-                    globset::GlobBuilder::new(pattern).case_insensitive(true).build()
+                    globset::GlobBuilder::new(pattern)
+                        .case_insensitive(true)
+                        .build()
                 }
                 .with_context(|| format!("Failed to compile glob pattern: {}", pattern))?;
-                
+
                 builder.add(glob);
             }
             Some(builder.build().context("Failed to build glob set")?)

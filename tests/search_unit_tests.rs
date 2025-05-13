@@ -10,6 +10,7 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
         case_sensitive: true,
         respect_gitignore: true,
         exclude_glob: None,
+        match_content_omit_num: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
@@ -54,6 +55,7 @@ fn test_search_pattern_case_insensitive() -> Result<()> {
         case_sensitive: false,
         respect_gitignore: true,
         exclude_glob: None,
+        match_content_omit_num: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
@@ -86,6 +88,7 @@ fn test_search_with_gitignore_respect() -> Result<()> {
         case_sensitive: false,
         respect_gitignore: true,
         exclude_glob: None,
+        match_content_omit_num: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
@@ -120,6 +123,7 @@ fn test_search_without_gitignore_respect() -> Result<()> {
         case_sensitive: false,
         respect_gitignore: false,
         exclude_glob: None,
+        match_content_omit_num: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
