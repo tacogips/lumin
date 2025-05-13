@@ -95,7 +95,7 @@ use crate::telemetry::{LogMessage, log_with_context};
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
-///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches
+///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches (full matches always preserved)
 /// };
 /// ```
 pub struct SearchOptions {
@@ -158,7 +158,8 @@ pub struct SearchOptions {
     ///
     /// # Examples
     ///
-    /// - `match_content_omit_num: Some(20)` will keep only 20 characters before and after each match
+    /// - `match_content_omit_num: Some(20)` will keep only 20 characters before and after each match,
+    ///   while always preserving the entire matched pattern regardless of its length
     /// - `match_content_omit_num: None` will retain the complete line content without truncation
     pub match_content_omit_num: Option<usize>,
 }
@@ -225,6 +226,10 @@ pub struct SearchResult {
     /// If `match_content_omit_num` was set in the search options, this might contain
     /// only partial line content, with characters beyond the specified limit around each
     /// match omitted. Check the `content_omitted` field to determine if content was truncated.
+    /// 
+    /// Note that the entire matched pattern will always be preserved, even if
+    /// `match_content_omit_num` is smaller than the match length. Only context around
+    /// the match is subject to omission.
     pub line_content: String,
 
     /// Indicates whether content was omitted from the line_content.
@@ -234,6 +239,10 @@ pub struct SearchResult {
     /// `match_content_omit_num` in the search options.
     ///
     /// When `false`, the entire original line content is preserved.
+    /// 
+    /// Note that even when content is omitted (`true`), the entire matched pattern
+    /// is always fully preserved, regardless of its length compared to `match_content_omit_num`.
+    /// Only the surrounding context before and after the match is affected by truncation.
     pub content_omitted: bool,
 }
 
@@ -379,7 +388,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
-///     match_content_omit_num: Some(50), // Limit content to 50 chars before and after matches
+///     match_content_omit_num: Some(50), // Limit context to 50 chars before and after each match (preserving full matches)
 /// };
 ///
 /// let results = search_files(
@@ -402,7 +411,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
-///     match_content_omit_num: Some(20), // Only show 20 characters before and after matches
+///     match_content_omit_num: Some(20), // Only show 20 characters around matches while preserving entire matches
 /// };
 ///
 /// let results = search_files(
@@ -705,6 +714,31 @@ pub struct SearchResult {
 /// // Find all CSS color codes
 /// let css_color_pattern = r"#[a-fA-F0-9]{3,6}|rgb\(\d+,\s*\d+,\s*\d+\)";
 /// let results = search_files(css_color_pattern, Path::new("styles"), &SearchOptions::default()).unwrap();
+/// 
+/// // Use content omission to focus on matches in large files with long lines
+/// let long_line_options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     match_content_omit_num: Some(30), // Show only 30 characters before and after matches
+/// };
+/// 
+/// let long_results = search_files(
+///     r"important_pattern", 
+///     Path::new("logs"),
+///     &long_line_options
+/// ).unwrap();
+/// 
+/// // Process results, noting which have truncated content
+/// for result in long_results {
+///     println!("{}: {}{}", 
+///         result.file_path.display(),
+///         result.line_content,
+///         if result.content_omitted { " (truncated)" } else { "" });
+///     
+///     // The entire match pattern is always preserved completely in the line_content,
+///     // even when content_omitted is true and other parts of the line are truncated
+/// }
 /// ```
 pub fn search_files(
     pattern: &str,

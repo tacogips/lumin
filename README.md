@@ -26,6 +26,7 @@ Options:
 
 - `--case-sensitive`: Enable case-sensitive matching
 - `--ignore-gitignore`: Ignore .gitignore rules
+- `--omit-context <NUM>`: Limit context around matches to show only NUM characters before and after each match (the matched pattern itself is always displayed in full)
 
 ### Traverse directories
 
@@ -57,6 +58,7 @@ The view command outputs a structured JSON with:
 - Type detection using extension and content analysis
 - Strongly typed output structures
 - Comprehensive error handling
+- Context control for search results to focus on relevant matches
 
 ## Development
 

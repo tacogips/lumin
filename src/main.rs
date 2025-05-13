@@ -34,6 +34,11 @@ enum Commands {
         /// Ignore gitignore files
         #[arg(long)]
         no_ignore: bool,
+
+        /// Limit context around matches (number of characters before and after)
+        /// While context is limited, the full matched pattern is always preserved
+        #[arg(long)]
+        omit_context: Option<usize>,
     },
 
     /// Traverse directories and list files
@@ -93,12 +98,13 @@ fn main() -> Result<()> {
             directory,
             case_sensitive,
             no_ignore,
+            omit_context,
         } => {
             let options = SearchOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
-                match_content_omit_num: None,
+                match_content_omit_num: *omit_context,
             };
 
             let results = search_files(pattern, directory, &options)?;
