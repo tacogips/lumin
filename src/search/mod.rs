@@ -4,19 +4,55 @@
 //! within a specified directory, with options for case sensitivity
 //! and gitignore handling.
 //!
-//! The search functionality uses regular expressions for advanced pattern matching,
-//! supporting features such as:
+//! ## Regex Pattern Syntax
 //!
-//! - Basic literal matching (e.g., `apple`)
-//! - Wildcards (e.g., `a..le` to match "apple")
-//! - Character classes (e.g., `[0-9]+` to match one or more digits)
-//! - Word boundaries (e.g., `\bword\b` to match "word" as a standalone word)
-//! - Anchors for line start/end (e.g., `^Line` to match at line start, `file$` at line end)
-//! - Alternation (e.g., `apple|orange` to match either term)
-//! - Repetition (e.g., `a{3,}` to match 3 or more 'a's)
-//! - Quantifiers (e.g., `a+` for one or more, `a*` for zero or more)
+//! The search functionality uses regular expressions for advanced pattern matching.
+//! Here are the key regex features supported with examples:
 //!
-//! For more complex searching, see the examples in the `search_files` function.
+//! ### Basic Patterns
+//! - **Literal text**: `apple` matches the text "apple" anywhere in a line
+//! - **Escaped special characters**: `\.` matches a literal dot, `\*` matches a literal asterisk
+//! - **Character wildcards**: `.` matches any character, so `a..le` matches "apple", "able", etc.
+//!
+//! ### Character Classes
+//! - **Digit matching**: `\d+` or `[0-9]+` matches one or more digits like "123"
+//! - **Letter matching**: `[a-zA-Z]+` matches one or more letters
+//! - **Custom character sets**: `[aeiou]` matches any vowel
+//! - **Negated sets**: `[^0-9]` matches any character that is not a digit
+//! - **Predefined classes**: `\w` (word chars), `\s` (whitespace), `\d` (digits)
+//!
+//! ### Anchors and Boundaries
+//! - **Line anchors**: `^start` matches "start" only at line beginning
+//! - **End anchors**: `end$` matches "end" only at line end
+//! - **Word boundaries**: `\bword\b` matches "word" but not "sword" or "wordsmith"
+//!
+//! ### Repetition and Quantifiers
+//! - **Zero or more**: `a*` matches "", "a", "aa", "aaa", etc.
+//! - **One or more**: `a+` matches "a", "aa", "aaa", etc. (but not "")
+//! - **Optional**: `colou?r` matches both "color" and "colour"
+//! - **Exact count**: `[0-9]{3}` matches exactly 3 digits
+//! - **Range**: `[0-9]{2,4}` matches between 2 and 4 digits
+//! - **Lazy matching**: `a.*?b` matches "a" followed by "b" with minimal characters between
+//!
+//! ### Alternation and Grouping
+//! - **Alternatives**: `cat|dog` matches either "cat" or "dog"
+//! - **Grouping**: `(ab)+` matches "ab", "abab", etc.
+//! - **Non-capturing groups**: `(?:abc)+` same as above but doesn't capture
+//!
+//! ### Advanced Features
+//! - **Lookahead**: `x(?=y)` matches "x" only if followed by "y"
+//! - **Negative lookahead**: `x(?!y)` matches "x" only if not followed by "y"
+//! - **Lookbehind**: `(?<=y)x` matches "x" only if preceded by "y"
+//! - **Negative lookbehind**: `(?<!y)x` matches "x" only if not preceded by "y"
+//!
+//! ### Common Patterns
+//! - **Email**: `[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}`
+//! - **URLs**: `https?://[\w\.-]+\.[a-zA-Z]{2,}(?:/[\w\.-]*)*`
+//! - **IP addresses**: `\b(?:\d{1,3}\.){3}\d{1,3}\b`
+//! - **Function definitions**: `fn\s+\w+\s*\([^)]*\)`
+//! - **ISO dates**: `\d{4}-\d{2}-\d{2}`
+//!
+//! For more comprehensive examples and details, see the documentation of the `search_files` function.
 
 use anyhow::{Context, Result};
 use globset;
@@ -164,16 +200,69 @@ pub struct SearchResult {
 ///
 /// # Arguments
 ///
-/// * `pattern` - The regular expression pattern to search for. Supports standard regex syntax:
-///   - Basic literals: `apple` to match the word "apple"
-///   - Wildcards: `.` matches any character, so `a..le` matches "apple"
-///   - Character classes: `[0-9]+` matches one or more digits
-///   - Word boundaries: `\bword\b` matches "word" as a whole word
-///   - Line anchors: `^Line` matches "Line" at the start of a line, `file$` at the end
-///   - Alternation: `apple|orange` matches either "apple" or "orange"
-///   - Repetition: `a{3,}` matches 3 or more consecutive 'a's
-///   - Quantifiers: `a+` matches one or more 'a's, `a*` matches zero or more
-///   - Capture groups: `(group)` allows grouping parts of the pattern
+/// * `pattern` - The regular expression pattern to search for. Supports standard regex syntax.
+///   See the "Regex Pattern Examples" section below for detailed examples.
+///
+/// # Regex Syntax Reference
+///
+/// ### Basic Literals and Escaping
+/// - Simple text literals match themselves: `apple` matches "apple" anywhere in text
+/// - To match regex special characters literally, escape with backslash: 
+///   - `\(` matches a literal "(" character
+///   - `\*` matches a literal "*" character
+///   - `\.` matches a literal "." character
+///   - `\\` matches a literal "\" character
+///   - `\+` matches a literal "+" character
+///   - `\?` matches a literal "?" character
+///   - `\[` matches a literal "[" character
+///   - `\{` matches a literal "{" character
+///   - `\^` matches a literal "^" character
+///   - `\$` matches a literal "$" character
+///   - `\|` matches a literal "|" character
+///
+/// ### Wildcards and Character Classes
+/// - `.` matches any single character except newline: `a.c` matches "abc", "a@c", etc.
+/// - `[abc]` matches any character in the set: `[aeiou]` matches any vowel
+/// - `[^abc]` matches any character not in the set: `[^0-9]` matches any non-digit
+/// - `[a-z]` matches character ranges: `[a-z]` matches lowercase letters
+/// - `\d` matches any digit (equivalent to `[0-9]`): `\d{3}` matches 3 digits
+/// - `\D` matches any non-digit (equivalent to `[^0-9]`)
+/// - `\w` matches any word character (alphanumeric + underscore): `\w+` matches words
+/// - `\W` matches any non-word character (anything except alphanumeric + underscore)
+/// - `\s` matches any whitespace character (space, tab, newline, etc.)
+/// - `\S` matches any non-whitespace character
+///
+/// ### Anchors and Boundaries
+/// - `^` matches start of line: `^Hello` matches "Hello" only at line start
+/// - `$` matches end of line: `world$` matches "world" only at line end
+/// - `\b` matches word boundary: `\bword\b` matches "word" but not "sword" or "wordsmith"
+/// - `\B` matches non-word boundary: `\Bcat\B` matches "cat" in "concatenate" but not "cat"
+///
+/// ### Quantifiers and Repetition
+/// - `*` matches 0 or more: `a*` matches "", "a", "aa", "aaa", etc.
+/// - `+` matches 1 or more: `a+` matches "a", "aa", "aaa", etc. (but not "")
+/// - `?` matches 0 or 1: `colou?r` matches both "color" and "colour"
+/// - `{n}` matches exactly n times: `a{3}` matches exactly "aaa"
+/// - `{n,}` matches n or more times: `a{2,}` matches "aa", "aaa", etc.
+/// - `{n,m}` matches between n and m times: `a{2,4}` matches "aa", "aaa", or "aaaa"
+/// - Quantifiers are greedy by default, add `?` to make them lazy:
+///   - `.*` is greedy, matches as much as possible
+///   - `.*?` is lazy, matches as little as possible
+///
+/// ### Alternation and Grouping
+/// - `|` for alternatives: `cat|dog` matches either "cat" or "dog"
+/// - `(...)` for grouping: `(abc)+` matches "abc", "abcabc", etc.
+/// - `(?:...)` for non-capturing groups: `(?:abc)+` same as above but doesn't capture
+///
+/// ### Lookaround Assertions
+/// - `(?=...)` positive lookahead: `foo(?=bar)` matches "foo" only if followed by "bar"
+/// - `(?!...)` negative lookahead: `foo(?!bar)` matches "foo" only if not followed by "bar"
+/// - `(?<=...)` positive lookbehind: `(?<=foo)bar` matches "bar" only if preceded by "foo"
+/// - `(?<!...)` negative lookbehind: `(?<!foo)bar` matches "bar" only if not preceded by "foo"
+///
+/// ### Special Pattern Flags
+/// - For case-insensitive matching, use the option parameter rather than embedding flags
+/// - `(?i)` inline case-insensitive flag: `(?i)hello` matches "hello", "Hello", "HELLO", etc.
 ///
 /// * `directory` - The directory path to search in. All files within this directory and
 ///   its subdirectories will be searched, subject to filtering by the options.
@@ -256,7 +345,240 @@ pub struct SearchResult {
 /// // but excluding all JSON files and Rust files in test directories
 /// ```
 ///
-/// Using regex features:
+/// ## Regex Pattern Examples
+///
+/// ### Basic Text Searching
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Simple literal text search
+/// let results = search_files("hello world", Path::new("docs"), &SearchOptions::default()).unwrap();
+///
+/// // Case-sensitive search for exact match
+/// let options = SearchOptions { case_sensitive: true, ..SearchOptions::default() };
+/// let results = search_files("ERROR", Path::new("logs"), &options).unwrap();
+///
+/// // Matching words with word boundaries
+/// let results = search_files(r"\berror\b", Path::new("logs"), &SearchOptions::default()).unwrap();
+/// ```
+///
+/// ### Special Character Escaping
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Searching for text with special regex characters (escaping required)
+/// let results = search_files(
+///     r"filename\.txt",  // Escape dot with backslash
+///     Path::new("docs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Searching for parentheses (need escaping)
+/// let results = search_files(
+///     r"function\(\)",  // Escape parentheses
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Searching for paths with backslashes
+/// let results = search_files(
+///     r"C:\\Windows\\System32",  // Double backslashes to escape
+///     Path::new("docs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Searching for asterisks, plus signs, or question marks
+/// let pattern = r"wildcard\*\.txt or plus\+\.txt or optional\?\.txt";
+/// let results = search_files(pattern, Path::new("docs"), &SearchOptions::default()).unwrap();
+/// ```
+///
+/// ### Pattern Matching with Wildcards
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Match any character (except newline)
+/// let results = search_files(
+///     r"log_2023.0[1-6].txt",  // Matches log_2023.01.txt through log_2023.06.txt
+///     Path::new("logs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Using character classes
+/// let results = search_files(
+///     r"user[0-9]+\.json",  // Matches user followed by one or more digits
+///     Path::new("data"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Using predefined character classes
+/// let results = search_files(
+///     r"\d{4}-\d{2}-\d{2}",  // ISO date format (YYYY-MM-DD)
+///     Path::new("logs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Using negated character classes
+/// let results = search_files(
+///     r"[^a-zA-Z]status",  // "status" not preceded by a letter
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+/// ```
+///
+/// ### Line Anchors and Boundaries
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Match at start of line
+/// let results = search_files(
+///     r"^function",  // Lines starting with "function"
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Match at end of line
+/// let results = search_files(
+///     r";$",  // Lines ending with semicolon
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Match whole word only
+/// let results = search_files(
+///     r"\bimport\b",  // "import" as a complete word
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Lines starting with whitespace then a pattern
+/// let results = search_files(
+///     r"^\s+[a-z]+:",  // Indented labels like "    label:"
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+/// ```
+///
+/// ### Repetition and Quantifiers
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // One or more occurrences
+/// let results = search_files(
+///     r"ERROR+",  // Matches "ERROR", "ERRORR", etc.
+///     Path::new("logs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Zero or more occurrences
+/// let results = search_files(
+///     r"DEBUG:.*exception",  // DEBUG: followed by anything, then "exception"
+///     Path::new("logs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Optional character
+/// let results = search_files(
+///     r"servers?\.[a-z]+\.com",  // Matches "server.domain.com" or "servers.domain.com"
+///     Path::new("config"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Specific repetition counts
+/// let results = search_files(
+///     r"[A-F0-9]{6}",  // Six hex digits (like color codes #RRGGBB)
+///     Path::new("styles"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Between n and m repetitions
+/// let results = search_files(
+///     r"\d{3,4}",  // 3 or 4 digit numbers
+///     Path::new("data"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Greedy vs. lazy matching
+/// let results = search_files(
+///     r"<div>.*?</div>",  // Match <div> tags non-greedily
+///     Path::new("templates"),
+///     &SearchOptions::default()
+/// ).unwrap();
+/// ```
+///
+/// ### Alternation and Grouping
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Alternative patterns
+/// let results = search_files(
+///     r"error|warning|fatal",  // Match any of the three terms
+///     Path::new("logs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Grouping for alternation
+/// let results = search_files(
+///     r"(Error|Warning): (disk|memory|cpu) (usage|failure)",  // Structured log lines
+///     Path::new("logs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Repeating groups
+/// let results = search_files(
+///     r"(ab)+cd",  // Matches "abcd", "ababcd", etc.
+///     Path::new("data"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Non-capturing groups for efficiency
+/// let results = search_files(
+///     r"(?:https?|ftp)://[\w.-]+\.[a-zA-Z]{2,6}",  // URL pattern
+///     Path::new("docs"),
+///     &SearchOptions::default()
+/// ).unwrap();
+/// ```
+///
+/// ### Lookarounds (Advanced Features)
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// // Positive lookahead
+/// let results = search_files(
+///     r"TODO(?=:)",  // "TODO" only when followed by colon
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Negative lookahead
+/// let results = search_files(
+///     r"function\s+\w+(?!\s*\()",  // Function names not followed by parentheses
+///     Path::new("src"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Positive lookbehind
+/// let results = search_files(
+///     r"(?<=@)\w+",  // Words following @ symbol (like Twitter handles)
+///     Path::new("social"),
+///     &SearchOptions::default()
+/// ).unwrap();
+///
+/// // Negative lookbehind
+/// let results = search_files(
+///     r"(?<!\w)\d+(?!\w)",  // Numbers not part of alphanumeric strings
+///     Path::new("data"),
+///     &SearchOptions::default()
+/// ).unwrap();
+/// ```
+///
+/// ### Practical Pattern Examples
 /// ```no_run
 /// use lumin::search::{SearchOptions, search_files};
 /// use std::path::Path;
@@ -266,7 +588,7 @@ pub struct SearchResult {
 /// let results = search_files(
 ///     email_pattern,
 ///     Path::new("data"),
-///     &SearchOptions::default() // Uses default options (exclude_glob is None)
+///     &SearchOptions::default()
 /// ).unwrap();
 ///
 /// // Find all function definitions with parameters, excluding test files
@@ -281,6 +603,30 @@ pub struct SearchResult {
 ///     Path::new("src"),
 ///     &options
 /// ).unwrap();
+///
+/// // Find IP addresses
+/// let ip_pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b";
+/// let results = search_files(ip_pattern, Path::new("logs"), &SearchOptions::default()).unwrap();
+///
+/// // Find HTTP/HTTPS URLs
+/// let url_pattern = r"https?://[\w.-]+\.[a-zA-Z]{2,}(?:/[\w.-]*)*";
+/// let results = search_files(url_pattern, Path::new("docs"), &SearchOptions::default()).unwrap();
+///
+/// // Find TODO comments with assignee
+/// let todo_pattern = r"TODO\([a-zA-Z]+\):";
+/// let results = search_files(todo_pattern, Path::new("src"), &SearchOptions::default()).unwrap();
+///
+/// // Find JSON keys and their values
+/// let json_pattern = r"\"([\w.-]+)\"\s*:\s*\"([^\"]*)\"|\"([\w.-]+)\"\s*:\s*(\d+|true|false|null)";
+/// let results = search_files(json_pattern, Path::new("config"), &SearchOptions::default()).unwrap();
+///
+/// // Find all markdown headers
+/// let markdown_header_pattern = r"^#{1,6}\s+.*";
+/// let results = search_files(markdown_header_pattern, Path::new("docs"), &SearchOptions::default()).unwrap();
+///
+/// // Find all CSS color codes
+/// let css_color_pattern = r"#[a-fA-F0-9]{3,6}|rgb\(\d+,\s*\d+,\s*\d+\)";
+/// let results = search_files(css_color_pattern, Path::new("styles"), &SearchOptions::default()).unwrap();
 /// ```
 pub fn search_files(
     pattern: &str,
