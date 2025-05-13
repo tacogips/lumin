@@ -19,7 +19,7 @@
 //! For more complex searching, see the examples in the `search_files` function.
 
 use anyhow::{Context, Result};
-use globset::{self, GlobSetBuilder, GlobBuilder};
+use globset;
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
@@ -47,12 +47,14 @@ use crate::telemetry::{LogMessage, log_with_context};
 /// let custom_options = SearchOptions {
 ///     case_sensitive: true,
 ///     respect_gitignore: false,
+///     exclude_glob: None,
 /// };
 ///
 /// // Case-insensitive search, respecting gitignore files
 /// let mixed_options = SearchOptions {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
+///     exclude_glob: None,
 /// };
 /// ```
 pub struct SearchOptions {

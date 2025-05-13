@@ -17,6 +17,8 @@ mod view_tests {
     fn test_view_text_file() -> Result<()> {
         let _env = TestEnvironment::setup()?;
 
+        // Make sure we're actually creating the file in our test environment
+        std::fs::copy("tests/fixtures/text_files/config.toml", Path::new(TEST_DIR).join("config.toml"))?;
         let file_path = Path::new(TEST_DIR).join("config.toml");
         let options = ViewOptions::default();
 
@@ -30,7 +32,9 @@ mod view_tests {
         match &result.contents {
             FileContents::Text { content, metadata } => {
                 assert!(!content.is_empty());
-                assert!(content.contains("Configuration file for testing"));
+                assert!(content.contains("server"));
+                assert!(content.contains("database"));
+                assert!(content.contains("port = 8080"));
                 assert!(metadata.line_count > 0);
                 assert!(metadata.char_count > 0);
             }

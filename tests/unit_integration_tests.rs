@@ -28,6 +28,7 @@ fn test_full_workflow() -> Result<()> {
     let search_options = SearchOptions {
         case_sensitive: false,
         respect_gitignore: true,
+        exclude_glob: None,
     };
 
     let search_results = search_files(search_pattern, directory, &search_options)?;

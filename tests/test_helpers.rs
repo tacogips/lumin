@@ -6,6 +6,51 @@ use std::path::PathBuf;
 // The main test directory
 pub const TEST_DIR: &str = "tests/test_dir_1";
 
+/// Sets up multiple file types for testing exclude_glob functionality
+pub fn setup_multiple_file_types() -> Result<Vec<PathBuf>> {
+    let mut created_files = Vec::new();
+    
+    // Create file types to test exclude_glob functionality
+    let file_types = [
+        ("test.json", "{ \"key\": \"This file has content in JSON format\" }"),
+        ("test.yaml", "key: This file has content in YAML format"),
+        ("test.md", "# Test Markdown\n\nThis file has content in Markdown format"),
+        ("test.txt", "This file has content in plain text format"),
+        ("config.toml", "[section]\nkey = \"This file has content in TOML format\""),
+    ];
+    
+    // Create each file in the test directory
+    for (filename, content) in &file_types {
+        let file_path = PathBuf::from(TEST_DIR).join(filename);
+        let mut file = File::create(&file_path)?;
+        writeln!(file, "{}", content)?;
+        created_files.push(file_path);
+    }
+    
+    // Create files in subdirectories
+    let subdirs = ["docs", "src", "scripts"];
+    for subdir in &subdirs {
+        let dir_path = PathBuf::from(TEST_DIR).join(subdir);
+        if !dir_path.exists() {
+            fs::create_dir_all(&dir_path)?;
+        }
+        
+        // Create a file in each subdirectory
+        let file_path = dir_path.join("sample.txt");
+        let mut file = File::create(&file_path)?;
+        writeln!(file, "This file has content in the {} directory", subdir)?;
+        created_files.push(file_path);
+        
+        // Add a JSON file in each subdirectory
+        let json_path = dir_path.join("config.json");
+        let mut file = File::create(&json_path)?;
+        writeln!(file, "{{ \"message\": \"This file has content in the {} directory\" }}", subdir)?;
+        created_files.push(json_path);
+    }
+    
+    Ok(created_files)
+}
+
 /// Set up temporary files for testing (files that would be ignored by gitignore)
 pub fn setup_ignored_files() -> Result<Vec<PathBuf>> {
     let mut created_files = Vec::new();

@@ -1,13 +1,12 @@
-# Configuration file for testing
+[server]
+port = 8080
+host = "localhost"
+debug = true
 
-[general]
-version = "1.0.0"
-name = "test-project"
+[database]
+url = "postgresql://user:password@localhost/mydb"
+pool_size = 10
 
-[search]
-max_depth = 10
-ignore_case = true
-respect_gitignore = true
-
-[view]
-max_size = 1048576  # 1MB
+[logging]
+level = "info"
+pattern = "standard"
