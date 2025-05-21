@@ -60,7 +60,7 @@ use anyhow::{Context, Result};
 use globset;
 use grep::matcher::Matcher;
 use grep::regex::RegexMatcher;
-use grep::searcher::sinks::UTF8;
+// Import removed: grep::searcher::sinks::UTF8; (no longer needed)
 use grep::searcher::{BinaryDetection, SearcherBuilder};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
@@ -88,6 +88,7 @@ use crate::telemetry::{LogMessage, log_with_context};
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     after_context: 0, // Only show matching lines, no context
 /// };
 ///
 /// // Case-insensitive search, respecting gitignore files, with content truncation
@@ -96,6 +97,7 @@ use crate::telemetry::{LogMessage, log_with_context};
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches (full matches always preserved)
+///     after_context: 2, // Show 2 lines after each match
 /// };
 /// ```
 pub struct SearchOptions {
@@ -162,6 +164,22 @@ pub struct SearchOptions {
     ///   while always preserving the entire matched pattern regardless of its length
     /// - `match_content_omit_num: None` will retain the complete line content without truncation
     pub match_content_omit_num: Option<usize>,
+
+    /// Number of lines to display after each match (similar to grep's -A option).
+    ///
+    /// When set to a value greater than 0, this many lines after each match will be included
+    /// in the search results, allowing you to see the context following each match.
+    /// When set to 0 (default), only the matching lines are returned.
+    ///
+    /// # Examples
+    ///
+    /// - `after_context: 0` (default) - Only matching lines are included in results
+    /// - `after_context: 3` - Each match will include the matching line plus the 3 lines that follow it
+    ///
+    /// This is particularly useful for understanding the context of a match, such as seeing
+    /// the body of a function after matching its definition, or viewing the full error message
+    /// after matching an error indicator.
+    pub after_context: usize,
 }
 
 impl Default for SearchOptions {
@@ -171,6 +189,7 @@ impl Default for SearchOptions {
             respect_gitignore: true,
             exclude_glob: None,
             match_content_omit_num: None,
+            after_context: 0,
         }
     }
 }
@@ -244,6 +263,17 @@ pub struct SearchResult {
     /// is always fully preserved, regardless of its length compared to `match_content_omit_num`.
     /// Only the surrounding context before and after the match is affected by truncation.
     pub content_omitted: bool,
+
+    /// Indicates whether this result is a context line rather than a direct match.
+    ///
+    /// When `true`, this line was included as context (either before or after a match)
+    /// rather than containing a direct match to the search pattern.
+    /// 
+    /// When `false`, this line directly matches the search pattern.
+    ///
+    /// This is useful for displaying context lines differently or for filtering results
+    /// to show only direct matches when desired.
+    pub is_context: bool,
 }
 
 /// Searches for the specified regex pattern in files within the given directory.
@@ -389,6 +419,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
 ///     match_content_omit_num: Some(50), // Limit context to 50 chars before and after each match (preserving full matches)
+///     after_context: 5, // Show 5 lines after each match
 /// };
 ///
 /// let results = search_files(
@@ -399,7 +430,8 @@ pub struct SearchResult {
 ///
 /// // Will find "password" in any case, respecting gitignore files,
 /// // but excluding all JSON files and Rust files in test directories,
-/// // and limit the displayed content to 50 characters around each match
+/// // limit the displayed content to 50 characters around each match,
+/// // and show 5 lines after each match
 /// ```
 ///
 /// Using content omission to focus on matches in long lines:
@@ -412,6 +444,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(20), // Only show 20 characters around matches while preserving entire matches
+///     after_context: 3, // Show 3 lines of context after each match
 /// };
 ///
 /// let results = search_files(
@@ -421,14 +454,22 @@ pub struct SearchResult {
 /// ).unwrap();
 ///
 /// for result in results {
-///     println!("{}: {}{}",
-///         result.file_path.display(),
-///         result.line_content,
-///         if result.content_omitted { " (truncated)" } else { "" });
+///     // Display context lines differently
+///     if result.is_context {
+///         println!("{}: [Context] {}",
+///             result.file_path.display(),
+///             result.line_content);
+///     } else {
+///         println!("{}: {}{}",
+///             result.file_path.display(),
+///             result.line_content,
+///             if result.content_omitted { " (truncated)" } else { "" });
+///     }
 /// }
 ///
 /// // Will find "important_pattern" in any case, respecting gitignore files,
-/// // but only showing 20 characters of context before and after each match
+/// // but only showing 20 characters of context before and after each match, plus the 3 lines
+/// // that follow each matching line
 /// ```
 ///
 /// ## Regex Pattern Examples
@@ -763,6 +804,7 @@ pub fn search_files(
     // Set up the searcher
     let mut searcher = SearcherBuilder::new()
         .binary_detection(BinaryDetection::quit(b'\x00'))
+        .after_context(options.after_context)
         .build();
 
     // Search each file
@@ -784,19 +826,62 @@ pub fn search_files(
 
         // Create a sink that collects the results
         let mut matches = Vec::new();
+        
+        // Define a custom sink to handle both matches and context lines
+        struct MatchCollector<'a> {
+            // We don't need to store the matcher reference in this implementation
+            matches: &'a mut Vec<(u64, String, bool)>, // (line_number, content, is_context)
+        }
+        
+        impl<'a> grep::searcher::Sink for MatchCollector<'a> {
+            type Error = std::io::Error;
+
+            // Handle match lines
+            fn matched(
+                &mut self,
+                _searcher: &grep::searcher::Searcher,
+                mat: &grep::searcher::SinkMatch<'_>,
+            ) -> Result<bool, Self::Error> {
+                let line = String::from_utf8_lossy(mat.bytes()).to_string();
+                self.matches.push((mat.line_number().unwrap_or(0), line, false)); // Not a context line
+                Ok(true)
+            }
+
+            // Handle context lines
+            fn context(
+                &mut self,
+                _searcher: &grep::searcher::Searcher,
+                ctx: &grep::searcher::SinkContext<'_>,
+            ) -> Result<bool, Self::Error> {
+                let line = String::from_utf8_lossy(ctx.bytes()).to_string();
+                self.matches.push((ctx.line_number().unwrap_or(0), line, true)); // Is a context line
+                Ok(true)
+            }
+        }
+        
+        let collector = MatchCollector {
+            matches: &mut matches,
+        };
+        
         searcher
-            .search_file(
-                &matcher,
-                &file,
-                UTF8(|line_number, line| {
-                    matches.push((line_number, line.to_string()));
-                    Ok(true)
-                }),
-            )
+            .search_file(&matcher, &file, collector)
             .with_context(|| format!("Error searching file {}", file_path.display()))?;
     
         // Process all matches
-        for (line_number, content) in matches {
+        for (line_number, content, is_context) in matches {
+            // For context lines, we don't need to apply omission logic
+            if is_context {
+                results.push(SearchResult {
+                    file_path: file_path.clone(),
+                    line_number,
+                    line_content: content,
+                    content_omitted: false,
+                    is_context: true,
+                });
+                continue;
+            }
+            
+            // For actual matches, apply omission if needed
             // Calculate which parts of the content to keep and whether any was omitted
             let (keep_ranges, content_omitted) = if let Some(omit_num) = options.match_content_omit_num {
                 // Apply content omission
@@ -942,6 +1027,7 @@ pub fn search_files(
                 line_number,
                 line_content,
                 content_omitted,
+                is_context: false,
             });
         }
     }

@@ -39,6 +39,10 @@ enum Commands {
         /// While context is limited, the full matched pattern is always preserved
         #[arg(long)]
         omit_context: Option<usize>,
+
+        /// Number of lines to show after each match (similar to grep's -A option)
+        #[arg(short = 'A', long = "after-context", default_value = "0")]
+        after_context: usize,
     },
 
     /// Traverse directories and list files
@@ -99,12 +103,14 @@ fn main() -> Result<()> {
             case_sensitive,
             no_ignore,
             omit_context,
+            after_context,
         } => {
             let options = SearchOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
                 match_content_omit_num: *omit_context,
+                after_context: *after_context,
             };
 
             let results = search_files(pattern, directory, &options)?;
@@ -112,14 +118,43 @@ fn main() -> Result<()> {
             if results.is_empty() {
                 println!("No matches found.");
             } else {
-                println!("Found {} matches:", results.len());
+                // Count actual matches (not context lines)
+                let match_count = results.iter().filter(|r| !r.is_context).count();
+                println!("Found {} matches:", match_count);
+                
+                let mut last_file = None;
+                let mut last_line_number = 0;
+                
                 for result in results {
-                    println!(
-                        "{}:{}: {}",
-                        result.file_path.display(),
-                        result.line_number,
-                        result.line_content.trim()
-                    );
+                    // Print separator between discontinuous results
+                    if let Some(last) = &last_file {
+                        if &result.file_path != last || result.line_number > last_line_number + 1 {
+                            println!("--");
+                        }
+                    }
+                    
+                    // Update tracking variables
+                    last_file = Some(result.file_path.clone());
+                    last_line_number = result.line_number;
+                    
+                    // Print result with different formatting for matches vs context
+                    if result.is_context {
+                        // Context line (grey/dimmed if terminal supports it)
+                        println!(
+                            "{}:{}- {}",
+                            result.file_path.display(),
+                            result.line_number,
+                            result.line_content.trim()
+                        );
+                    } else {
+                        // Matched line (regular text)
+                        println!(
+                            "{}:{}: {}",
+                            result.file_path.display(),
+                            result.line_number,
+                            result.line_content.trim()
+                        );
+                    }
                 }
             }
         }
