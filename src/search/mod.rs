@@ -419,6 +419,9 @@ pub struct SearchResultLine {
 /// This function performs a regex-based search across all files in the specified directory
 /// (and subdirectories), applying filters based on the provided options. It uses the
 /// regex syntax provided by the underlying `grep` crate.
+/// 
+/// Note: The current implementation is naive and not optimized for performance.
+/// This will be improved in future versions.
 ///
 /// # Arguments
 ///
