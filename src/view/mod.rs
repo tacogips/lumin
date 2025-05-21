@@ -161,6 +161,8 @@ pub struct FileView {
     pub file_type: String,
     /// The contents of the file, represented as an appropriate variant of FileContents
     pub contents: FileContents,
+    /// Total number of lines in the file, only present for text files
+    pub total_line_num: Option<usize>,
 }
 
 /// Reads and processes a file, detecting its type and returning an appropriate representation.
@@ -176,22 +178,26 @@ pub struct FileView {
 ///
 /// # Returns
 ///
-/// A FileView struct containing the file path, detected type, and contents with metadata.
+/// A FileView struct containing the file path, detected type, contents with metadata, and
+/// total line count information (for text files only).
 /// For text files, the content is structured as a collection of lines with line numbers.
 ///
 /// When line filtering is applied:
 /// - Only lines within the specified range (inclusive) are included
+/// - Size checking is optimized to check only the filtered content size, not the entire file
 /// - If the range is out of bounds, no error is returned:
 ///   - If `line_from` is beyond the file size, an empty content list is returned
 ///   - If `line_to` exceeds the file size, only available lines are included
 ///   - If `line_from` > `line_to`, an empty content list is returned
 /// - Metadata still represents the whole file regardless of filtering
+/// - The `total_line_num` field provides the total number of lines in the original file
 ///
 /// # Errors
 ///
 /// Returns an error if:
 /// - The file does not exist or is not a regular file
-/// - The file is larger than the maximum size specified in options
+/// - The file is larger than the maximum size specified in options (when not using line filters)
+/// - The filtered content is larger than the maximum size (when using line filters)
 /// - Failed to read file metadata or content
 /// - Failed to determine the file type
 pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
@@ -209,9 +215,13 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
         .metadata()
         .with_context(|| format!("Failed to read file metadata for {}", path.display()))?;
 
-    // Check file size if a limit is set
+    // Check file size if a limit is set and no line filters are applied
+    // When line filters are applied, we'll only process a subset of the file,
+    // so we skip the initial size check and validate the filtered content size later
+    let using_line_filters = options.line_from.is_some() || options.line_to.is_some();
+    
     if let Some(max_size) = options.max_size {
-        if metadata.len() > max_size as u64 {
+        if !using_line_filters && metadata.len() > max_size as u64 {
             return Err(anyhow!(
                 "File is too large: {} (size: {}, limit: {})",
                 path.display(),
@@ -282,6 +292,8 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
     file.read_to_end(&mut content)
         .with_context(|| format!("Failed to read file {}", path.display()))?;
 
+    // We'll handle size checks for each file type separately when line filters are applied
+
     // Process contents based on file type
     let contents = if file_type.starts_with("text/") {
         // Handle text files
@@ -319,8 +331,29 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
                     .collect();
 
                 // Create structured text content
+                let content = TextContent { line_contents };
+                
+                // If we're using line filters and have a max size, check the filtered content size
+                if using_line_filters && options.max_size.is_some() {
+                    let max_size = options.max_size.unwrap();
+                    // Estimate the size of filtered content by summing up the lengths of included lines
+                    // Also account for newline characters (\n) that would be present when reconstructing the content
+                    let filtered_size = content.line_contents.iter()
+                        .map(|line| line.line.len() + 1) // +1 for the newline character
+                        .sum::<usize>();
+                    
+                    if filtered_size > max_size {
+                        return Err(anyhow!(
+                            "Filtered content is too large: {} (filtered size: {}, limit: {})",
+                            path.display(),
+                            filtered_size,
+                            max_size
+                        ));
+                    }
+                }
+                
                 FileContents::Text {
-                    content: TextContent { line_contents },
+                    content,
                     metadata: TextMetadata {
                         line_count,
                         char_count,
@@ -341,6 +374,19 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
         }
     } else if file_type.starts_with("image/") {
         // Special handling for images
+        // If using line filters and we have a max size, check file size (since we skipped initial check)
+        if using_line_filters && options.max_size.is_some() {
+            let max_size = options.max_size.unwrap();
+            if metadata.len() > max_size as u64 {
+                return Err(anyhow!(
+                    "Image file is too large when using line filters: {} (size: {}, limit: {})",
+                    path.display(),
+                    metadata.len(),
+                    max_size
+                ));
+            }
+        }
+        
         FileContents::Image {
             message: format!("Image file detected: {}", file_type),
             metadata: ImageMetadata {
@@ -351,6 +397,19 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
         }
     } else {
         // For other binary files
+        // If using line filters and we have a max size, check file size (since we skipped initial check)
+        if using_line_filters && options.max_size.is_some() {
+            let max_size = options.max_size.unwrap();
+            if metadata.len() > max_size as u64 {
+                return Err(anyhow!(
+                    "Binary file is too large when using line filters: {} (size: {}, limit: {})",
+                    path.display(),
+                    metadata.len(),
+                    max_size
+                ));
+            }
+        }
+        
         FileContents::Binary {
             message: format!(
                 "Binary file detected, size: {} bytes, type: {}",
@@ -365,10 +424,17 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
         }
     };
 
+    // Set total_line_num based on file content type
+    let total_line_num = match &contents {
+        FileContents::Text { metadata, .. } => Some(metadata.line_count),
+        _ => None,
+    };
+
     let result = FileView {
         file_path: path.to_path_buf(),
         file_type,
         contents,
+        total_line_num,
     };
 
     Ok(result)
