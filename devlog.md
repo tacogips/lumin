@@ -352,7 +352,9 @@ This document describes the implementation of the lumin utility, focusing on des
   - Takes a callback function `F: FnMut(T, &Path) -> Result<T>`
   - Returns accumulated result of type `T`
   - Refactored `collect_files_with_excludes` to use this generic function
+  - Refactored search module's `collect_files` to use the generic function directly
   - Added comprehensive documentation with usage examples
+- Improved code sharing between search and traverse modules
   - Updated tests to ensure consistency
 
 ### 2025-04-23: Refactored View Module to Use Type-Safe Structures

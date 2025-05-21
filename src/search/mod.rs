@@ -1042,6 +1042,7 @@ pub fn search_files(
 /// Collects a list of files within the given directory that should be included in the search.
 ///
 /// This function applies both gitignore filtering and exclude_glob filtering based on the provided options.
+/// It uses the generic `traverse_with_callback` function to efficiently collect matching files.
 ///
 /// # Arguments
 ///
@@ -1057,11 +1058,17 @@ pub fn search_files(
 /// Returns an error if there's an issue accessing the directory or files, or if there's an error
 /// compiling the exclude glob patterns
 fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
-    // Use the common function from traverse module
-    common::collect_files_with_excludes(
+    // Use the generic traverse function directly
+    common::traverse_with_callback(
         directory,
         options.respect_gitignore,
         options.case_sensitive,
         options.exclude_glob.as_ref(),
+        Vec::new(), // Start with an empty vector
+        |mut files, path| {
+            // Add this file path to our collection
+            files.push(path.to_path_buf());
+            Ok(files)
+        },
     )
 }
