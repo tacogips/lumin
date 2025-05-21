@@ -340,6 +340,19 @@ This document describes the implementation of the lumin utility, focusing on des
 - Updates:
   - Enhanced file type detection
   - Improved filtering mechanisms
+
+### Added Generic Traversal Function with Callback Support
+- Created a new generic `traverse_with_callback<T, F>` function
+- Benefits:
+  - Supports collecting arbitrary result types via callbacks
+  - Uses `try_fold` for more efficient traversal and error handling
+  - Enables processing files during traversal without creating intermediate collections
+  - Creates a foundation for more specialized traversal functions
+- Implementation details:
+  - Takes a callback function `F: FnMut(T, &Path) -> Result<T>`
+  - Returns accumulated result of type `T`
+  - Refactored `collect_files_with_excludes` to use this generic function
+  - Added comprehensive documentation with usage examples
   - Updated tests to ensure consistency
 
 ### 2025-04-23: Refactored View Module to Use Type-Safe Structures

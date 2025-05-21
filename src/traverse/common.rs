@@ -72,35 +72,100 @@ pub fn is_hidden_path(path: &Path) -> bool {
     file_is_hidden || path_contains_hidden_dir
 }
 
-/// Collects a list of files within the given directory, with support for exclude glob patterns.
+/// Traverses a directory and collects results using a callback function.
 ///
-/// This function applies gitignore filtering and exclude_glob filtering based on the provided options.
+/// This generic function applies gitignore filtering and exclude_glob filtering based on the provided options,
+/// and uses a callback to process each valid file entry, accumulating results of any type.
+/// It uses the `try_fold` method for efficient traversal and result accumulation.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of the accumulated result
+/// * `F` - The type of the callback function that processes each file
 ///
 /// # Arguments
 ///
-/// * `directory` - The directory path to collect files from
+/// * `directory` - The directory path to traverse
 /// * `respect_gitignore` - Whether to respect gitignore rules
 /// * `case_sensitive` - Whether file path matching should be case sensitive
 /// * `exclude_glob` - Optional list of glob patterns to exclude files from the results
+/// * `initial` - The initial value for the result accumulator
+/// * `callback` - A function that processes each entry and updates the accumulator. This function
+///   should take two parameters: the current accumulator value and a reference to the file path,
+///   and return a Result containing the updated accumulator value.
 ///
 /// # Returns
 ///
-/// A vector of file paths to be searched
+/// The accumulated result of type T after processing all relevant files
 ///
 /// # Errors
 ///
 /// Returns an error if there's an issue accessing the directory or files, or if there's an error
-/// compiling the exclude glob patterns
-pub fn collect_files_with_excludes(
+/// compiling the exclude glob patterns, or if the callback returns an error
+///
+/// # Examples
+///
+/// Collecting file paths as strings:
+/// ```no_run
+/// use anyhow::Result;
+/// use lumin::traverse::common::traverse_with_callback;
+/// use std::path::Path;
+///
+/// fn collect_file_names(dir: &Path) -> Result<Vec<String>> {
+///     traverse_with_callback(
+///         dir,
+///         true,   // respect_gitignore
+///         false,  // case_sensitive
+///         None,   // exclude_glob
+///         Vec::new(),
+///         |mut names, path| {
+///             if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+///                 names.push(name.to_string());
+///             }
+///             Ok(names)
+///         }
+///     )
+/// }
+/// ```
+///
+/// Counting lines in all non-binary files:
+/// ```no_run
+/// use anyhow::{Context, Result};
+/// use lumin::traverse::common::traverse_with_callback;
+/// use std::fs::File;
+/// use std::io::{BufRead, BufReader};
+/// use std::path::Path;
+///
+/// fn count_lines(dir: &Path) -> Result<usize> {
+///     traverse_with_callback(
+///         dir,
+///         true,   // respect_gitignore
+///         false,  // case_sensitive
+///         Some(&vec!["*.bin".to_string(), "*.jpg".to_string()]),
+///         0,
+///         |count, path| {
+///             let file = File::open(path)
+///                 .with_context(|| format!("Failed to open {}", path.display()))?;
+///             let reader = BufReader::new(file);
+///             let lines = reader.lines().count();
+///             Ok(count + lines)
+///         }
+///     )
+/// }
+/// ```
+pub fn traverse_with_callback<T, F>(
     directory: &Path,
     respect_gitignore: bool,
     case_sensitive: bool,
     exclude_glob: Option<&Vec<String>>,
-) -> Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
-
+    initial: T,
+    mut callback: F,
+) -> Result<T>
+where
+    F: FnMut(T, &Path) -> Result<T>,
+{
     // Use the common walker builder
-    let walker = build_walk(directory, respect_gitignore, case_sensitive)?;
+    let mut walker = build_walk(directory, respect_gitignore, case_sensitive)?;
 
     // Compile exclude glob patterns if provided
     let glob_set = if let Some(exclude_patterns) = exclude_glob {
@@ -127,8 +192,9 @@ pub fn collect_files_with_excludes(
         None
     };
 
-    for result in walker {
-        match result {
+    // Use try_fold to accumulate results
+    let result = walker.try_fold(initial, |acc, entry_result| -> Result<T> {
+        match entry_result {
             Ok(entry) => {
                 let path = entry.path();
                 if path.is_file() {
@@ -138,10 +204,14 @@ pub fn collect_files_with_excludes(
                         let rel_path = path.strip_prefix(directory).unwrap_or(path);
                         if glob_set.is_match(rel_path) {
                             // Skip this file as it matches an exclude pattern
-                            continue;
+                            return Ok(acc);
                         }
                     }
-                    files.push(path.to_path_buf());
+                    // Process this file with the callback
+                    callback(acc, path)
+                } else {
+                    // Not a file, skip
+                    Ok(acc)
                 }
             }
             Err(err) => {
@@ -150,14 +220,86 @@ pub fn collect_files_with_excludes(
                     LogMessage {
                         message: format!("Error walking directory: {}", err),
                         module: "traverse",
-                        context: Some(vec![
-                            ("directory", directory.display().to_string()),
-                        ]),
+                        context: Some(vec![("directory", directory.display().to_string())]),
                     },
                 );
+                // Log the error but continue processing
+                Ok(acc)
             }
         }
-    }
+    })?;
 
-    Ok(files)
+    Ok(result)
+}
+
+/// Collects a list of files within the given directory, with support for exclude glob patterns.
+///
+/// This function applies gitignore filtering and exclude_glob filtering based on the provided options.
+/// It's implemented as a specialization of the more generic `traverse_with_callback` function,
+/// providing a simpler interface for the common case of just collecting file paths.
+///
+/// # Arguments
+///
+/// * `directory` - The directory path to collect files from
+/// * `respect_gitignore` - Whether to respect gitignore rules
+/// * `case_sensitive` - Whether file path matching should be case sensitive
+/// * `exclude_glob` - Optional list of glob patterns to exclude files from the results
+///
+/// # Returns
+///
+/// A vector of file paths to be searched
+///
+/// # Errors
+///
+/// Returns an error if there's an issue accessing the directory or files, or if there's an error
+/// compiling the exclude glob patterns
+///
+/// # Examples
+///
+/// Basic usage:
+/// ```no_run
+/// use anyhow::Result;
+/// use lumin::traverse::common::collect_files_with_excludes;
+/// use std::path::Path;
+///
+/// fn find_files(dir: &Path) -> Result<Vec<std::path::PathBuf>> {
+///     // Find all files, respecting gitignore, case-insensitive
+///     collect_files_with_excludes(dir, true, false, None)
+/// }
+/// ```
+///
+/// With exclude patterns:
+/// ```no_run
+/// use anyhow::Result;
+/// use lumin::traverse::common::collect_files_with_excludes;
+/// use std::path::Path;
+///
+/// fn find_source_files(dir: &Path) -> Result<Vec<std::path::PathBuf>> {
+///     // Find all files except build outputs and test files
+///     let excludes = vec![
+///         "**/target/**".to_string(),
+///         "**/*.test.*".to_string(),
+///         "**/*_test.*".to_string(),
+///     ];
+///     
+///     collect_files_with_excludes(dir, true, false, Some(&excludes))
+/// }
+/// ```
+pub fn collect_files_with_excludes(
+    directory: &Path,
+    respect_gitignore: bool,
+    case_sensitive: bool,
+    exclude_glob: Option<&Vec<String>>,
+) -> Result<Vec<PathBuf>> {
+    traverse_with_callback(
+        directory,
+        respect_gitignore,
+        case_sensitive,
+        exclude_glob,
+        Vec::new(),
+        |mut files, path| {
+            files.push(path.to_path_buf());
+            Ok(files)
+        },
+    )
 }

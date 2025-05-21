@@ -35,6 +35,23 @@ This library provides functionality for searching and displaying local files.
 
 - By default, the library uses the `infer` crate and only returns files that cannot be parsed by this crate (identifying them as text files). This filtering behavior can be toggled via parameters.
 
+- Provides a generic traversal function that can be used to collect arbitrary data:
+  ```rust
+  pub fn traverse_with_callback<T, F>(
+      directory: &Path,
+      respect_gitignore: bool,
+      case_sensitive: bool,
+      exclude_glob: Option<&Vec<String>>,
+      initial: T,
+      callback: F,
+  ) -> Result<T>
+  where
+      F: FnMut(T, &Path) -> Result<T>,
+  ```
+  - This enables custom processing during traversal without creating intermediate collections
+  - Can be used to implement specialized traversal functions for specific needs
+  - All existing traversal functions are implemented on top of this generic function
+
 ### Directory Tree Structure
 
 - Built on top of the traversal functionality
