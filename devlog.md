@@ -223,6 +223,36 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### Added Deterministic Sorting of Search Results
+
+Enhanced the `SearchResult` type to provide consistent and deterministic ordering of search results based on file path and line number. This improvement ensures that search results are always presented in a predictable order, making it easier for users to navigate through results when there are multiple matches across different files.
+
+Key changes:
+
+1. Added a `sort_by_path_and_line` method to `SearchResult` that sorts the results first by file path (lexicographically) and then by line number within each file:
+
+```rust
+pub fn sort_by_path_and_line(&mut self) -> &mut Self {
+    self.lines.sort_by(|a, b| {
+        // First compare file paths
+        let path_cmp = a.file_path.cmp(&b.file_path);
+        // If paths are equal, compare line numbers
+        if path_cmp == std::cmp::Ordering::Equal {
+            a.line_number.cmp(&b.line_number)
+        } else {
+            path_cmp
+        }
+    });
+    self
+}
+```
+
+2. Modified the `search_files` function to automatically sort results before returning them, ensuring consistent ordering by default.
+
+3. Added comprehensive test coverage in a new test file `search_sort_tests.rs` to verify both the default sorting in `search_files` and the explicit sorting via `sort_by_path_and_line`.
+
+This change improves the user experience by providing a more predictable presentation of search results while maintaining backward compatibility with existing code.
+
 ### 2025-05-23: Fixed SearchResult Pagination Support
 - Fixed the `split` method in `SearchResult` to properly extract result ranges
 - Replaced non-existent `choice` function with proper iterator-based implementation

@@ -13,6 +13,7 @@ This library provides functionality for searching and displaying local files.
   Specify a target directory to grep through files under that directory.
   Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
 - Case sensitivity can be toggled via parameters.
+- Search results are automatically sorted by file path (lexicographically) and line number (numerically) for deterministic ordering.
 - Supports context control:
   - Before-context option to show N lines preceding each match (similar to grep's -B option)
   - After-context option to show N lines following each match (similar to grep's -A option)

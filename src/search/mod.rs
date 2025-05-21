@@ -323,6 +323,42 @@ impl SearchResult {
                 .collect(),
         }
     }
+
+    /// Sorts the search result lines by file path and line number.
+    ///
+    /// This method sorts the lines in-place, first by file path (lexicographically) and then
+    /// by line number (numerically) within each file.
+    ///
+    /// # Returns
+    ///
+    /// A reference to self for method chaining.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use lumin::search::SearchResult;
+    /// // Create some search results
+    /// let mut my_search_results = SearchResult {
+    ///     total_number: 25,
+    ///     lines: vec![/* SearchResultLine items */],
+    /// };
+    /// 
+    /// // Sort the results by file path and line number
+    /// my_search_results.sort_by_path_and_line();
+    /// ```
+    pub fn sort_by_path_and_line(&mut self) -> &mut Self {
+        self.lines.sort_by(|a, b| {
+            // First compare file paths
+            let path_cmp = a.file_path.cmp(&b.file_path);
+            // If paths are equal, compare line numbers
+            if path_cmp == std::cmp::Ordering::Equal {
+                a.line_number.cmp(&b.line_number)
+            } else {
+                path_cmp
+            }
+        });
+        self
+    }
 }
 
 /// Represents a single search match result.
@@ -1288,10 +1324,16 @@ pub fn search_files(
     // Create the SearchResult with the total count and lines
     let total_number = result_lines.len();
     
-    Ok(SearchResult {
+    // Create the result and sort it by file path and line number
+    let mut result = SearchResult {
         total_number,
         lines: result_lines,
-    })
+    };
+    
+    // Sort the results for consistent ordering
+    result.sort_by_path_and_line();
+    
+    Ok(result)
 }
 
 /// Collects a list of files within the given directory that should be included in the search.
