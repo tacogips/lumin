@@ -1736,3 +1736,7 @@ mod mod_tests;
 // Specific tests for collect_files
 #[cfg(test)]
 mod collect_files_test;
+
+// Tests for pagination and sorting behavior
+#[cfg(test)]
+mod pagination_test;
