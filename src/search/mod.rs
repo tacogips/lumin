@@ -88,6 +88,7 @@ use crate::traverse::common;
 ///     case_sensitive: true,
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
+///     include_glob: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0, // No lines before matches
@@ -99,10 +100,23 @@ use crate::traverse::common;
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
+///     include_glob: None,
 ///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches (full matches always preserved)
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
+/// };
+///
+/// // File type-focused search (only search specific file types)
+/// let filetype_options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()]), // Only search Rust and TOML files
+///     match_content_omit_num: None,
+///     depth: Some(20),
+///     before_context: 0,
+///     after_context: 0,
 /// };
 ///
 /// // Context-focused search (like grep -B3 -A2 pattern)
@@ -110,6 +124,7 @@ use crate::traverse::common;
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
+///     include_glob: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 3, // Show 3 lines before each match
@@ -154,6 +169,23 @@ pub struct SearchOptions {
     ///   both node_modules and .git directories and their contents
     /// - `exclude_glob: None` means no files will be excluded based on glob patterns
     pub exclude_glob: Option<Vec<String>>,
+    
+    /// Optional list of glob patterns for files to include in the search.
+    ///
+    /// When provided, only files matching at least one of these patterns will be included in the search.
+    /// This can be used to limit searches to specific file types or directories.
+    /// When `None` (default), all files will be searched (subject to other filtering options).
+    ///
+    /// Note: If both `include_glob` and `exclude_glob` are specified, a file will be included only if
+    /// it matches at least one include pattern AND doesn't match any exclude pattern.
+    ///
+    /// # Examples
+    ///
+    /// - `include_glob: Some(vec!["**/*.rs".to_string()])` will only search Rust files
+    /// - `include_glob: Some(vec!["src/**".to_string()])` will only search files in the src directory and its subdirectories
+    /// - `include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()])` will only search Rust and TOML files
+    /// - `include_glob: None` means all files will be included (subject to other filtering criteria)
+    pub include_glob: Option<Vec<String>>,
 
     /// Optional setting to limit the number of characters displayed around matches in search results.
     ///
@@ -234,6 +266,7 @@ impl Default for SearchOptions {
             case_sensitive: false,
             respect_gitignore: true,
             exclude_glob: None,
+            include_glob: None,
             match_content_omit_num: None,
             depth: Some(20),
             before_context: 0,
@@ -446,6 +479,7 @@ pub struct SearchResult {
 ///     case_sensitive: true,
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
+///     include_glob: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -470,6 +504,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
+///     include_glob: None, // Search all files not excluded
 ///     match_content_omit_num: Some(50), // Limit context to 50 chars before and after each match (preserving full matches)
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
@@ -487,6 +522,59 @@ pub struct SearchResult {
 /// // limit the displayed content to 50 characters around each match,
 /// // show 2 lines before and 5 lines after each match
 /// ```
+/// 
+/// Using include_glob to search only specific file types:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()]), // Only search Rust and TOML files
+///     match_content_omit_num: None,
+///     depth: Some(20),
+///     before_context: 0,
+///     after_context: 0,
+/// };
+///
+/// let results = search_files(
+///     "dependencies",
+///     Path::new("."),
+///     &options
+/// ).unwrap();
+///
+/// // Will find "dependencies" only in Rust (.rs) and TOML (.toml) files
+/// // across the entire project, respecting gitignore files
+/// ```
+/// 
+/// Combining include_glob and exclude_glob for precise file targeting:
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files};
+/// use std::path::Path;
+///
+/// let options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: Some(vec!["**/target/**".to_string(), "**/node_modules/**".to_string()]),
+///     include_glob: Some(vec!["**/*.rs".to_string(), "**/*.md".to_string()]), // Only search Rust and Markdown files
+///     match_content_omit_num: None,
+///     depth: Some(20),
+///     before_context: 1,
+///     after_context: 1,
+/// };
+///
+/// let results = search_files(
+///     "TODO",
+///     Path::new("."),
+///     &options
+/// ).unwrap();
+///
+/// // Will find "TODO" comments only in Rust and Markdown files,
+/// // while excluding any files in target/ and node_modules/ directories,
+/// // showing 1 line of context before and after each match
+/// ```
 ///
 /// Using content omission to focus on matches in long lines:
 /// ```no_run
@@ -497,6 +585,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
+///     include_glob: None,
 ///     match_content_omit_num: Some(20), // Only show 20 characters around matches while preserving entire matches
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -780,6 +869,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
+///     include_glob: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -820,6 +910,7 @@ pub struct SearchResult {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
+///     include_glob: Some(vec!["**/*.log".to_string()]), // Only search log files
 ///     match_content_omit_num: Some(30), // Show only 30 characters before and after matches
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
@@ -1108,8 +1199,9 @@ pub fn search_files(
 
 /// Collects a list of files within the given directory that should be included in the search.
 ///
-/// This function applies both gitignore filtering and exclude_glob filtering based on the provided options.
-/// It uses the generic `traverse_with_callback` function to efficiently collect matching files.
+/// This function applies gitignore filtering, exclude_glob filtering, and include_glob filtering 
+/// based on the provided options. It uses the generic `traverse_with_callback` function to 
+/// efficiently collect matching files.
 ///
 /// # Arguments
 ///
@@ -1123,8 +1215,10 @@ pub fn search_files(
 /// # Errors
 ///
 /// Returns an error if there's an issue accessing the directory or files, or if there's an error
-/// compiling the exclude glob patterns
+/// compiling the glob patterns
 fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
+    let include_glob = options.include_glob.as_ref();
+    
     // Use the generic traverse function directly
     common::traverse_with_callback(
         directory,
@@ -1134,8 +1228,24 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
         options.exclude_glob.as_ref(),
         Vec::new(), // Start with an empty vector
         |mut files, path| {
-            // Add this file path to our collection
-            files.push(path.to_path_buf());
+            // If include_glob is specified, only include files that match at least one pattern
+            if let Some(include_patterns) = include_glob {
+                // Check if file matches any of the include patterns
+                let is_included = common::path_matches_any_glob(
+                    path, 
+                    include_patterns, 
+                    options.case_sensitive
+                )?;
+                
+                // Only add the file if it matches an include pattern
+                if is_included {
+                    files.push(path.to_path_buf());
+                }
+            } else {
+                // No include_glob, so include all files
+                files.push(path.to_path_buf());
+            }
+            
             Ok(files)
         },
     )

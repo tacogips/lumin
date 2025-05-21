@@ -9,6 +9,64 @@ use std::path::{Path, PathBuf};
 
 use crate::telemetry::{LogMessage, log_with_context};
 
+/// Checks if a path matches any of the provided glob patterns.
+///
+/// This function is useful for filtering files based on glob patterns.
+/// It supports standard glob syntax including wildcards, character classes, and brace expansion.
+///
+/// # Arguments
+///
+/// * `path` - The file path to check
+/// * `glob_patterns` - A slice of glob patterns to match against
+/// * `case_sensitive` - Whether the glob matching should be case sensitive
+///
+/// # Returns
+///
+/// `true` if the path matches any of the provided patterns, `false` otherwise
+///
+/// # Errors
+///
+/// Returns an error if there's an issue compiling the glob patterns
+///
+/// # Examples
+///
+/// ```no_run
+/// use anyhow::Result;
+/// use lumin::traverse::common::path_matches_any_glob;
+/// use std::path::Path;
+///
+/// fn is_source_file(path: &Path) -> Result<bool> {
+///     let patterns = vec!["**/*.rs".to_string(), "**/*.toml".to_string()];
+///     path_matches_any_glob(path, &patterns, false)
+/// }
+/// ```
+pub fn path_matches_any_glob(
+    path: &Path,
+    glob_patterns: &[String],
+    case_sensitive: bool,
+) -> Result<bool> {
+    if glob_patterns.is_empty() {
+        return Ok(false);
+    }
+
+    let mut builder = globset::GlobSetBuilder::new();
+    for pattern in glob_patterns {
+        let glob = if case_sensitive {
+            globset::GlobBuilder::new(pattern).build()
+        } else {
+            globset::GlobBuilder::new(pattern)
+                .case_insensitive(true)
+                .build()
+        }
+        .with_context(|| format!("Failed to compile glob pattern: {}", pattern))?;
+
+        builder.add(glob);
+    }
+
+    let glob_set = builder.build().context("Failed to build glob set")?;
+    Ok(glob_set.is_match(path))
+}
+
 /// Builds a configured file system walker based on the provided options.
 ///
 /// # Arguments

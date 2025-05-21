@@ -29,6 +29,7 @@ fn test_full_workflow() -> Result<()> {
     let search_options = SearchOptions {
         case_sensitive: false,
         respect_gitignore: true,
+        include_glob: None,
         exclude_glob: None,
         match_content_omit_num: None,
         depth: Some(20),

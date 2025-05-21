@@ -135,6 +135,7 @@ fn main() -> Result<()> {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
+                include_glob: None,
                 match_content_omit_num: *omit_context,
                 depth: if *max_depth == 0 { None } else { Some(*max_depth) },
                 before_context: *before_context,
