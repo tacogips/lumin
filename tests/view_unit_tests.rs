@@ -323,6 +323,52 @@ fn test_total_line_num_field() -> Result<()> {
 }
 
 #[test]
+fn test_no_trailing_newlines() -> Result<()> {
+    // Test that line field doesn't have trailing newlines
+    let text_file_path = Path::new("tests/fixtures/text_files/sample.txt");
+    let options = ViewOptions::default();
+    
+    let text_result = view_file(text_file_path, &options)?;
+    
+    // For text files, check that no line ends with newline
+    match &text_result.contents {
+        FileContents::Text { content, .. } => {
+            for line_content in &content.line_contents {
+                assert!(!line_content.line.ends_with('\n'), 
+                       "Line content contains trailing newline: {:?}", line_content.line);
+            }
+        },
+        _ => panic!("Expected text content")
+    }
+    
+    // Test with line filtering as well
+    let filtered_options = ViewOptions {
+        max_size: None,
+        line_from: Some(2),
+        line_to: Some(4),
+    };
+    
+    let filtered_result = view_file(text_file_path, &filtered_options)?;
+    
+    // Check that filtered lines also don't have trailing newlines
+    match &filtered_result.contents {
+        FileContents::Text { content, .. } => {
+            // Verify we got the expected lines
+            assert_eq!(content.line_contents.len(), 3);
+            
+            // Verify no trailing newlines
+            for line_content in &content.line_contents {
+                assert!(!line_content.line.ends_with('\n'), 
+                       "Filtered line contains trailing newline: {:?}", line_content.line);
+            }
+        },
+        _ => panic!("Expected text content")
+    }
+    
+    Ok(())
+}
+
+#[test]
 fn test_size_check_with_line_filters() -> Result<()> {
     let file_path = Path::new("tests/fixtures/text_files/sample.txt");
     

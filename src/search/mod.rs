@@ -289,6 +289,7 @@ pub struct SearchResult {
     ///
     /// This contains the entire line where the match was found, not just the
     /// matched substring. The matched pattern may appear anywhere within this string.
+    /// Trailing newlines are removed from the line content.
     ///
     /// If `match_content_omit_num` was set in the search options, this might contain
     /// only partial line content, with characters beyond the specified limit around each
@@ -912,7 +913,7 @@ pub fn search_files(
                 _searcher: &grep::searcher::Searcher,
                 mat: &grep::searcher::SinkMatch<'_>,
             ) -> Result<bool, Self::Error> {
-                let line = String::from_utf8_lossy(mat.bytes()).to_string();
+                let line = String::from_utf8_lossy(mat.bytes()).to_string().trim_end_matches('\n').to_string();
                 self.matches.push((mat.line_number().unwrap_or(0), line, false)); // Not a context line
                 Ok(true)
             }
@@ -923,7 +924,7 @@ pub fn search_files(
                 _searcher: &grep::searcher::Searcher,
                 ctx: &grep::searcher::SinkContext<'_>,
             ) -> Result<bool, Self::Error> {
-                let line = String::from_utf8_lossy(ctx.bytes()).to_string();
+                let line = String::from_utf8_lossy(ctx.bytes()).to_string().trim_end_matches('\n').to_string();
                 self.matches.push((ctx.line_number().unwrap_or(0), line, true)); // Is a context line
                 Ok(true)
             }

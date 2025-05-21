@@ -117,7 +117,7 @@ impl TextContent {
 pub struct LineContent {
     /// Line number (1-based index)
     pub line_number: usize,
-    /// The content of the line
+    /// The content of the line without trailing newlines
     pub line: String,
 }
 
@@ -326,7 +326,7 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
                     })
                     .map(|(idx, line)| LineContent {
                         line_number: idx + 1, // Convert to 1-based index
-                        line: line.to_string(),
+                        line: line.to_string().trim_end_matches('\n').to_string(),
                     })
                     .collect();
 

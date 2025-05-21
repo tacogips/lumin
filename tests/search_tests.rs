@@ -151,4 +151,58 @@ mod search_tests {
 
         Ok(())
     }
+
+    /// Test that line_content does not contain trailing newlines
+    #[test]
+    #[serial]
+    fn test_no_trailing_newlines() -> Result<()> {
+        let _env = TestEnvironment::setup()?;
+
+        // Use a pattern that should exist in the test files
+        let pattern = "fn";
+        let options = SearchOptions::default();
+
+        let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
+
+        // Should find matches
+        assert!(!results.is_empty());
+
+        // None of the results should have trailing newlines
+        for result in &results {
+            assert!(!result.line_content.ends_with('\n'), 
+                   "line_content contains trailing newline: {:?}", result.line_content);
+        }
+
+        Ok(())
+    }
+
+    /// Test that context lines do not contain trailing newlines
+    #[test]
+    #[serial]
+    fn test_no_trailing_newlines_in_context() -> Result<()> {
+        let _env = TestEnvironment::setup()?;
+
+        // Use a pattern that should exist in the test files
+        let pattern = "fn";
+        let mut options = SearchOptions::default();
+        // Set context values to ensure we get context lines
+        options.before_context = 2;
+        options.after_context = 2;
+
+        let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
+
+        // Should find matches
+        assert!(!results.is_empty());
+        
+        // Should have some context lines
+        assert!(results.iter().any(|r| r.is_context));
+
+        // None of the results (including context lines) should have trailing newlines
+        for result in &results {
+            assert!(!result.line_content.ends_with('\n'), 
+                   "line_content contains trailing newline: {:?}", result.line_content);
+        }
+
+        Ok(())
+    }
 }
