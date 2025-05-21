@@ -40,6 +40,10 @@ enum Commands {
         #[arg(long)]
         omit_context: Option<usize>,
 
+        /// Number of lines to show before each match (similar to grep's -B option)
+        #[arg(short = 'B', long = "before-context", default_value = "0")]
+        before_context: usize,
+
         /// Number of lines to show after each match (similar to grep's -A option)
         #[arg(short = 'A', long = "after-context", default_value = "0")]
         after_context: usize,
@@ -103,6 +107,7 @@ fn main() -> Result<()> {
             case_sensitive,
             no_ignore,
             omit_context,
+            before_context,
             after_context,
         } => {
             let options = SearchOptions {
@@ -110,6 +115,7 @@ fn main() -> Result<()> {
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
                 match_content_omit_num: *omit_context,
+                before_context: *before_context,
                 after_context: *after_context,
             };
 

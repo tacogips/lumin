@@ -30,6 +30,7 @@ fn test_full_workflow() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        before_context: 0,
         after_context: 0,
     };
 

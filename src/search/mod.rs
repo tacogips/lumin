@@ -89,6 +89,7 @@ use crate::traverse::common;
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     before_context: 0, // No lines before matches
 ///     after_context: 0, // Only show matching lines, no context
 /// };
 ///
@@ -98,6 +99,17 @@ use crate::traverse::common;
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches (full matches always preserved)
+///     before_context: 2, // Show 2 lines before each match
+///     after_context: 2, // Show 2 lines after each match
+/// };
+///
+/// // Context-focused search (like grep -B3 -A2 pattern)
+/// let context_options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     match_content_omit_num: None,
+///     before_context: 3, // Show 3 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
 /// };
 /// ```
@@ -166,6 +178,22 @@ pub struct SearchOptions {
     /// - `match_content_omit_num: None` will retain the complete line content without truncation
     pub match_content_omit_num: Option<usize>,
 
+    /// Number of lines to display before each match (similar to grep's -B option).
+    ///
+    /// When set to a value greater than 0, this many lines before each match will be included
+    /// in the search results, allowing you to see the context preceding each match.
+    /// When set to 0 (default), no lines before the matching lines are included.
+    ///
+    /// # Examples
+    ///
+    /// - `before_context: 0` (default) - No lines before matches are included in results
+    /// - `before_context: 3` - Each match will include the 3 lines that precede it, plus the matching line
+    ///
+    /// This is particularly useful for understanding the context of a match, such as seeing
+    /// function or class declarations before matching a specific method or property,
+    /// or understanding the conditions that led to an error before matching an error message.
+    pub before_context: usize,
+
     /// Number of lines to display after each match (similar to grep's -A option).
     ///
     /// When set to a value greater than 0, this many lines after each match will be included
@@ -190,6 +218,7 @@ impl Default for SearchOptions {
             respect_gitignore: true,
             exclude_glob: None,
             match_content_omit_num: None,
+            before_context: 0,
             after_context: 0,
         }
     }
@@ -399,6 +428,7 @@ pub struct SearchResult {
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     before_context: 0,
 ///     after_context: 0,
 /// };
 ///
@@ -411,7 +441,7 @@ pub struct SearchResult {
 /// // Will only find "ERROR" in uppercase, and will include files listed in .gitignore
 /// ```
 ///
-/// Using exclude_glob to skip specific file types:
+/// Using exclude_glob to skip specific file types with context:
 /// ```no_run
 /// use lumin::search::{SearchOptions, search_files};
 /// use std::path::Path;
@@ -421,6 +451,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
 ///     match_content_omit_num: Some(50), // Limit context to 50 chars before and after each match (preserving full matches)
+///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 5, // Show 5 lines after each match
 /// };
 ///
@@ -433,7 +464,7 @@ pub struct SearchResult {
 /// // Will find "password" in any case, respecting gitignore files,
 /// // but excluding all JSON files and Rust files in test directories,
 /// // limit the displayed content to 50 characters around each match,
-/// // and show 5 lines after each match
+/// // show 2 lines before and 5 lines after each match
 /// ```
 ///
 /// Using content omission to focus on matches in long lines:
@@ -446,6 +477,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(20), // Only show 20 characters around matches while preserving entire matches
+///     before_context: 0,
 ///     after_context: 3, // Show 3 lines of context after each match
 /// };
 ///
@@ -727,6 +759,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
 ///     match_content_omit_num: None,
+///     before_context: 0,
 ///     after_context: 0,
 /// };
 /// let results = search_files(
@@ -759,13 +792,14 @@ pub struct SearchResult {
 /// let css_color_pattern = r"#[a-fA-F0-9]{3,6}|rgb\(\d+,\s*\d+,\s*\d+\)";
 /// let results = search_files(css_color_pattern, Path::new("styles"), &SearchOptions::default()).unwrap();
 /// 
-/// // Use content omission to focus on matches in large files with long lines
+/// // Use content omission and context lines in large files with long lines
 /// let long_line_options = SearchOptions {
 ///     case_sensitive: false,
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(30), // Show only 30 characters before and after matches
-///     after_context: 0,
+///     before_context: 2, // Show 2 lines before each match
+///     after_context: 2, // Show 2 lines after each match
 /// };
 /// 
 /// let long_results = search_files(
@@ -774,12 +808,20 @@ pub struct SearchResult {
 ///     &long_line_options
 /// ).unwrap();
 /// 
-/// // Process results, noting which have truncated content
+/// // Process results, showing both matches and context lines differently
 /// for result in long_results {
-///     println!("{}: {}{}", 
-///         result.file_path.display(),
-///         result.line_content,
-///         if result.content_omitted { " (truncated)" } else { "" });
+///     if result.is_context {
+///         // Display context lines differently
+///         println!("{}: [Context] {}", 
+///             result.file_path.display(),
+///             result.line_content);
+///     } else {
+///         // Display actual matches with truncation indicator if needed
+///         println!("{}: [Match] {}{}", 
+///             result.file_path.display(),
+///             result.line_content,
+///             if result.content_omitted { " (truncated)" } else { "" });
+///     }
 ///     
 ///     // The entire match pattern is always preserved completely in the line_content,
 ///     // even when content_omitted is true and other parts of the line are truncated
@@ -808,6 +850,7 @@ pub fn search_files(
     // Set up the searcher
     let mut searcher = SearcherBuilder::new()
         .binary_detection(BinaryDetection::quit(b'\x00'))
+        .before_context(options.before_context)
         .after_context(options.after_context)
         .build();
 
