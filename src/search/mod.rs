@@ -334,8 +334,14 @@ impl SearchResult {
 /// let options = SearchOptions::default();
 ///
 /// match search_files(pattern, directory, &options) {
-///     Ok(results) => {
-///         for result in results {
+///     Ok(search_result) => {
+///         println!("Total matches: {}", search_result.total_number);
+///         
+///         // Get the first 10 results for pagination
+///         let page_1 = search_result.split(1, 10);
+///         println!("Showing results 1-10 of {}", page_1.total_number);
+///         
+///         for result in page_1.lines {
 ///             println!("Found '{}' in {}:{}: {}{}",
 ///                      pattern,
 ///                      result.file_path.display(),
@@ -483,12 +489,18 @@ pub struct SearchResultLine {
 ///
 /// # Returns
 ///
-/// A vector of `SearchResultLine` objects, each containing:
-/// - The path to the file with a match
-/// - The line number where the match was found (1-based)
-/// - The full content of the line containing the match
+/// A `SearchResult` object containing:
+/// - `total_number`: The total number of search result lines found
+/// - `lines`: A vector of `SearchResultLine` objects, each containing:
+///   - The path to the file with a match
+///   - The line number where the match was found (1-based)
+///   - The full content of the line containing the match
+///   - Whether any content was omitted
+///   - Whether the line is a context line or a direct match
 ///
 /// The results are not sorted in any particular order.
+/// 
+/// The `SearchResult` structure also provides a `split` method for pagination.
 ///
 /// # Errors
 ///
@@ -504,13 +516,21 @@ pub struct SearchResultLine {
 /// use lumin::search::{SearchOptions, search_files};
 /// use std::path::Path;
 ///
-/// let results = search_files(
+/// let search_result = search_files(
 ///     "function",
 ///     Path::new("src"),
 ///     &SearchOptions::default()
 /// ).unwrap();
 ///
-/// println!("Found {} matches", results.len());
+/// println!("Found {} matches", search_result.total_number);
+/// 
+/// // Iterate through the result lines
+/// for line in &search_result.lines {
+///     println!("{}: {}:{}", 
+///         line.file_path.display(),
+///         line.line_number,
+///         line.line_content);
+/// }
 /// ```
 ///
 /// Case-sensitive search ignoring gitignore files:
@@ -529,11 +549,13 @@ pub struct SearchResultLine {
 ///     after_context: 0,
 /// };
 ///
-/// let results = search_files(
+/// let search_result = search_files(
 ///     "ERROR",
 ///     Path::new("logs"),
 ///     &options
 /// ).unwrap();
+///
+/// println!("Found {} matches", search_result.total_number);
 ///
 /// // Will only find "ERROR" in uppercase, and will include files listed in .gitignore
 /// ```
@@ -635,13 +657,15 @@ pub struct SearchResultLine {
 ///     after_context: 3, // Show 3 lines of context after each match
 /// };
 ///
-/// let results = search_files(
+/// let search_result = search_files(
 ///     "important_pattern",
 ///     Path::new("src"),
 ///     &options
 /// ).unwrap();
 ///
-/// for result in results {
+/// println!("Found {} lines (including context lines)", search_result.total_number);
+///
+/// for result in search_result.lines {
 ///     // Display context lines differently
 ///     if result.is_context {
 ///         println!("{}: [Context] {}",
@@ -989,7 +1013,7 @@ pub fn search_files(
     pattern: &str,
     directory: &Path,
     options: &SearchOptions,
-) -> Result<Vec<SearchResultLine>> {
+) -> Result<SearchResult> {
     // Create the matcher with the appropriate case sensitivity
     let matcher = if options.case_sensitive {
         RegexMatcher::new(pattern)
@@ -1003,7 +1027,7 @@ pub fn search_files(
     let files =
         collect_files(directory, options).context("Failed to collect files for searching")?;
 
-    let mut results = Vec::new();
+    let mut result_lines = Vec::new();
 
     // Set up the searcher
     let mut searcher = SearcherBuilder::new()
@@ -1084,7 +1108,7 @@ pub fn search_files(
         for (line_number, content, is_context) in matches {
             // For context lines, we don't need to apply omission logic
             if is_context {
-                results.push(SearchResultLine {
+                result_lines.push(SearchResultLine {
                     file_path: file_path.clone(),
                     line_number,
                     line_content: content,
@@ -1241,7 +1265,7 @@ pub fn search_files(
                 content
             };
 
-            results.push(SearchResultLine {
+            result_lines.push(SearchResultLine {
                 file_path: file_path.clone(),
                 line_number,
                 line_content,
@@ -1251,7 +1275,13 @@ pub fn search_files(
         }
     }
 
-    Ok(results)
+    // Create the SearchResult with the total count and lines
+    let total_number = result_lines.len();
+    
+    Ok(SearchResult {
+        total_number,
+        lines: result_lines,
+    })
 }
 
 /// Collects a list of files within the given directory that should be included in the search.

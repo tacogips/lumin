@@ -23,13 +23,13 @@ mod search_before_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Verify that no results are marked as context
-        assert!(!results.iter().any(|r| r.is_context));
+        assert!(!results.lines.iter().any(|r| r.is_context));
 
         // All results should contain the search pattern
-        for result in &results {
+        for result in &results.lines {
             assert!(result.line_content.contains(pattern));
         }
 
@@ -50,11 +50,11 @@ mod search_before_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Verify that we have both matches and context lines
-        let matches: Vec<_> = results.iter().filter(|r| !r.is_context).collect();
-        let contexts: Vec<_> = results.iter().filter(|r| r.is_context).collect();
+        let matches: Vec<_> = results.lines.iter().filter(|r| !r.is_context).collect();
+        let contexts: Vec<_> = results.lines.iter().filter(|r| r.is_context).collect();
 
         assert!(!matches.is_empty(), "Should have at least one match");
         assert!(!contexts.is_empty(), "Should have at least one context line");
@@ -66,20 +66,20 @@ mod search_before_context_tests {
 
         // Verify that we have the right amount of context for each match
         // In our case, we're looking for "fn main" which should have lines before it
-        for (i, result) in results.iter().enumerate() {
+        for (i, result) in results.lines.iter().enumerate() {
             if !result.is_context {
                 // This is a match, check if it has context lines preceding it
                 let mut context_count: usize = 0;
                 // Count context lines before this match
                 for j in (0..i).rev() {
-                    if !results[j].is_context {
+                    if !results.lines[j].is_context {
                         break; // Previous match found
                     }
                     // Should be the same file
-                    assert_eq!(results[j].file_path, result.file_path);
+                    assert_eq!(results.lines[j].file_path, result.file_path);
                     // Should be consecutive line numbers (result line number should be greater than context line number)
                     let expected_line_num = result.line_number.saturating_sub(context_count as u64 + 1);
-                    assert_eq!(results[j].line_number, expected_line_num);
+                    assert_eq!(results.lines[j].line_number, expected_line_num);
                     context_count += 1;
                     if context_count >= options.before_context {
                         break;
@@ -90,7 +90,7 @@ mod search_before_context_tests {
                 // Check if there are enough results before this one and make sure we don't overflow
                 if i >= context_count && 
                    (context_count == 0 || 
-                    (i > context_count + 1 && !results[i - context_count - 1].is_context)) {
+                    (i > context_count + 1 && !results.lines[i - context_count - 1].is_context)) {
                     // If match is not at the start of the file, we should have the full context
                     let file_content = std::fs::read_to_string(&result.file_path)?;
                     let _file_lines: Vec<_> = file_content.lines().collect();

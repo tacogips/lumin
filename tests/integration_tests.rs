@@ -39,11 +39,11 @@ mod integration_tests {
 
         for file_path in rust_files {
             let results = search_files("fn", file_path, &search_options)?;
-            search_results.extend(results);
+            search_results.extend(results.lines);
         }
 
         // We should find at least one function definition
-        assert!(!search_results.is_empty());
+        assert!(!search_results.lines.is_empty());
 
         Ok(())
     }
@@ -64,7 +64,7 @@ mod integration_tests {
         // Now view each file that matched
         let view_options = ViewOptions::default();
 
-        for result in &search_results {
+        for result in &search_results.lines {
             let file_view = view_file(&result.file_path, &view_options)?;
 
             // The file type should be text

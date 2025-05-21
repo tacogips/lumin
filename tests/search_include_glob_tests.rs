@@ -27,11 +27,11 @@ mod search_include_glob_tests {
         
         // Verify we have results in different file types
         assert!(
-            all_results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            all_results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Expected to find the pattern in JSON files"
         );
         assert!(
-            all_results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".txt")),
+            all_results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".txt")),
             "Expected to find the pattern in TXT files"
         );
 
@@ -41,11 +41,11 @@ mod search_include_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should still find matches
-        assert!(!results.is_empty(), "Expected to find matches in JSON files");
+        assert!(!results.lines.is_empty(), "Expected to find matches in JSON files");
         
         // Should only find JSON files
         assert!(
-            results.iter().all(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            results.lines.iter().all(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Found non-JSON files despite only including JSON files"
         );
 
@@ -74,11 +74,11 @@ mod search_include_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should find matches
-        assert!(!results.is_empty(), "Expected to find matches in JSON or YAML files");
+        assert!(!results.lines.is_empty(), "Expected to find matches in JSON or YAML files");
         
         // Should only find JSON or YAML files
         assert!(
-            results.iter().all(|r| {
+            results.lines.iter().all(|r| {
                 let path = r.file_path.to_string_lossy();
                 path.ends_with(".json") || path.ends_with(".yaml")
             }),
@@ -106,7 +106,7 @@ mod search_include_glob_tests {
         // Verify we have files in various directories
         let all_results = search_files(pattern, Path::new(TEST_DIR), &SearchOptions::default())?;
         assert!(
-            all_results.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
+            all_results.lines.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
             "Expected to find the pattern in the docs directory"
         );
         
@@ -118,11 +118,11 @@ mod search_include_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should find matches
-        assert!(!results.is_empty(), "Expected to find matches in docs directory");
+        assert!(!results.lines.is_empty(), "Expected to find matches in docs directory");
         
         // Should only find files in the docs directory
         assert!(
-            results.iter().all(|r| r.file_path.to_string_lossy().contains("/docs/")),
+            results.lines.iter().all(|r| r.file_path.to_string_lossy().contains("/docs/")),
             "Found files outside the docs directory despite only including it"
         );
 

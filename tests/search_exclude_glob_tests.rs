@@ -27,7 +27,7 @@ mod search_exclude_glob_tests {
         
         // There should be some JSON files in the results
         assert!(
-            all_results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            all_results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Expected to find the pattern in JSON files before exclusion"
         );
 
@@ -37,7 +37,7 @@ mod search_exclude_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should still find matches
-        assert!(!results.is_empty(), "Expected to find matches in non-JSON files");
+        assert!(!results.lines.is_empty(), "Expected to find matches in non-JSON files");
         
         // Should not find any JSON files
         assert!(

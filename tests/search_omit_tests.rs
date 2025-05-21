@@ -31,9 +31,9 @@ fn test_content_omission() -> Result<()> {
     let results = search_files("pattern", temp_dir.path(), &options)?;
     
     // Verify results without omission
-    assert_eq!(results.len(), 1);
-    assert_eq!(results[0].content_omitted, false);
-    assert_eq!(results[0].line_content.trim(), content);
+    assert_eq!(results.lines.len(), 1);
+    assert_eq!(results.lines[0].content_omitted, false);
+    assert_eq!(results.lines[0].line_content.trim(), content);
     
     // Test with content omission enabled (5 characters before and after match)
     let omit_options = SearchOptions {
@@ -50,14 +50,14 @@ fn test_content_omission() -> Result<()> {
     let omitted_results = search_files("pattern", temp_dir.path(), &omit_options)?;
     
     // Verify results with omission
-    assert_eq!(omitted_results.len(), 1);
-    assert_eq!(omitted_results[0].content_omitted, true);
+    assert_eq!(omitted_results.lines.len(), 1);
+    assert_eq!(omitted_results.lines[0].content_omitted, true);
     
     // The result should contain "<omit>vwxyz_PATTERN_01234<omit>"
-    let omitted_content = omitted_results[0].line_content.trim();
+    let omitted_content = omitted_results.lines[0].line_content.trim();
     println!("Original content: {}", content);
     println!("Omitted content: {}", omitted_content);
-    println!("content_omitted flag: {}", omitted_results[0].content_omitted);
+    println!("content_omitted flag: {}", omitted_results.lines[0].content_omitted);
     
     // Check if omission worked as expected
     // The content starts with actual characters since we match near the beginning of the string
@@ -81,11 +81,11 @@ fn test_content_omission() -> Result<()> {
     let omitted_results2 = search_files("pattern", temp_dir.path(), &omit_options2)?;
     
     // Verify result has more context but still omits some content
-    assert_eq!(omitted_results2.len(), 1);
-    assert_eq!(omitted_results2[0].content_omitted, true);
+    assert_eq!(omitted_results2.lines.len(), 1);
+    assert_eq!(omitted_results2.lines[0].content_omitted, true);
     
     // The result should contain more context around the pattern
-    let omitted_content2 = omitted_results2[0].line_content.trim();
+    let omitted_content2 = omitted_results2.lines[0].line_content.trim();
     println!("Omitted content (20 chars): {}", omitted_content2);
     assert!(omitted_content2.contains("_PATTERN_"), "Omitted content should contain the pattern");
     
@@ -115,7 +115,7 @@ fn test_content_omission() -> Result<()> {
     let long_match_results = search_files("verylongpatternstring", temp_dir.path(), &small_omit_options)?;
     
     // Find the result for the long_match.txt file
-    let long_match_result = long_match_results.iter()
+    let long_match_result = long_match_results.lines.iter()
         .find(|r| r.file_path.file_name().unwrap() == "long_match.txt")
         .unwrap();
     
@@ -145,10 +145,10 @@ fn test_content_omission() -> Result<()> {
     let multi_results = search_files("pattern", temp_dir.path(), &omit_options)?;
     
     // Verify results for multiple matches
-    assert!(multi_results.len() >= 2); // Should have at least 2 results (from both files)
+    assert!(multi_results.lines.len() >= 2); // Should have at least 2 results (from both files)
     
     // Find the result for the multi_match.txt file
-    let multi_match_result = multi_results.iter()
+    let multi_match_result = multi_results.lines.iter()
         .find(|r| r.file_path.file_name().unwrap() == "multi_match.txt")
         .unwrap();
     

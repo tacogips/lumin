@@ -23,13 +23,13 @@ mod search_after_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Verify that no results are marked as context
-        assert!(!results.iter().any(|r| r.is_context));
+        assert!(!results.lines.iter().any(|r| r.is_context));
 
         // All results should contain the search pattern
-        for result in &results {
+        for result in &results.lines {
             assert!(result.line_content.contains(pattern));
         }
 
@@ -49,11 +49,11 @@ mod search_after_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Verify that we have both matches and context lines
-        let matches: Vec<_> = results.iter().filter(|r| !r.is_context).collect();
-        let contexts: Vec<_> = results.iter().filter(|r| r.is_context).collect();
+        let matches: Vec<_> = results.lines.iter().filter(|r| !r.is_context).collect();
+        let contexts: Vec<_> = results.lines.iter().filter(|r| r.is_context).collect();
 
         assert!(!matches.is_empty(), "Should have at least one match");
         assert!(!contexts.is_empty(), "Should have at least one context line");
@@ -65,18 +65,18 @@ mod search_after_context_tests {
 
         // Verify that we have the right amount of context for each match
         // In our case, we're looking for "fn main" which should have at least 3 lines after it
-        for (i, result) in results.iter().enumerate() {
+        for (i, result) in results.lines.iter().enumerate() {
             if !result.is_context {
                 // This is a match, check if it has context lines following it
                 let mut context_count: usize = 0;
-                for j in i+1..results.len() {
-                    if !results[j].is_context {
+                for j in i+1..results.lines.len() {
+                    if !results.lines[j].is_context {
                         break; // Next match found
                     }
                     // Should be the same file
-                    assert_eq!(results[j].file_path, result.file_path);
+                    assert_eq!(results.lines[j].file_path, result.file_path);
                     // Should be consecutive line numbers
-                    assert_eq!(results[j].line_number, result.line_number + context_count as u64 + 1);
+                    assert_eq!(results.lines[j].line_number, result.line_number + context_count as u64 + 1);
                     context_count += 1;
                     if context_count >= options.after_context {
                         break;
@@ -84,8 +84,8 @@ mod search_after_context_tests {
                 }
                 // Only verify exact context count if we're not at the end of the file
                 // and if this match doesn't immediately precede another match
-                if i + context_count + 1 < results.len() && 
-                   results[i + context_count + 1].is_context == false {
+                if i + context_count + 1 < results.lines.len() && 
+                   results.lines[i + context_count + 1].is_context == false {
                     assert_eq!(context_count, options.after_context);
                 }
             }
@@ -108,7 +108,7 @@ mod search_after_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Create a mapping of file paths to line numbers with their is_context flag
         let mut file_lines = std::collections::HashMap::new();

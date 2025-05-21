@@ -203,9 +203,9 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.is_empty(), "No results for pattern: {}", pattern);
+            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.iter().any(|r| r.line_content.contains(expected_match)),
+                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -240,9 +240,9 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.is_empty(), "No results for pattern: {}", pattern);
+            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.iter().any(|r| r.line_content.contains(expected_match)),
+                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -276,9 +276,9 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.is_empty(), "No results for pattern: {}", pattern);
+            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.iter().any(|r| r.line_content.contains(expected_match)),
+                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -309,9 +309,9 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.is_empty(), "No results for pattern: {}", pattern);
+            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.iter().any(|r| r.line_content.contains(expected_match)),
+                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -342,9 +342,9 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.is_empty(), "No results for pattern: {}", pattern);
+            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.iter().any(|r| r.line_content.contains(expected_match)),
+                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern

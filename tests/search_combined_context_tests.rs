@@ -25,11 +25,11 @@ mod search_combined_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Verify that we have both matches and context lines
-        let matches: Vec<_> = results.iter().filter(|r| !r.is_context).collect();
-        let contexts: Vec<_> = results.iter().filter(|r| r.is_context).collect();
+        let matches: Vec<_> = results.lines.iter().filter(|r| !r.is_context).collect();
+        let contexts: Vec<_> = results.lines.iter().filter(|r| r.is_context).collect();
 
         assert!(!matches.is_empty(), "Should have at least one match");
         assert!(!contexts.is_empty(), "Should have at least one context line");
@@ -40,7 +40,7 @@ mod search_combined_context_tests {
         }
 
         // For each match, verify that we have the correct context before and after
-        for (i, result) in results.iter().enumerate() {
+        for (i, result) in results.lines.iter().enumerate() {
             if !result.is_context {
                 // This is a match
                 let file_path = &result.file_path;
@@ -49,11 +49,11 @@ mod search_combined_context_tests {
                 // Count context lines before this match
                 let mut before_count = 0;
                 for j in (0..i).rev() {
-                    if results[j].file_path != *file_path || !results[j].is_context {
+                    if results.lines[j].file_path != *file_path || !results.lines[j].is_context {
                         break; // Previous match or different file
                     }
                     // Verify line numbers are consecutive in reverse
-                    assert_eq!(results[j].line_number, line_num - (before_count as u64 + 1));
+                    assert_eq!(results.lines[j].line_number, line_num - (before_count as u64 + 1));
                     before_count += 1;
                     if before_count >= options.before_context {
                         break;
@@ -62,12 +62,12 @@ mod search_combined_context_tests {
                 
                 // Count context lines after this match
                 let mut after_count = 0;
-                for j in i+1..results.len() {
-                    if results[j].file_path != *file_path || !results[j].is_context {
+                for j in i+1..results.lines.len() {
+                    if results.lines[j].file_path != *file_path || !results.lines[j].is_context {
                         break; // Next match or different file
                     }
                     // Verify line numbers are consecutive
-                    assert_eq!(results[j].line_number, line_num + (after_count as u64 + 1));
+                    assert_eq!(results.lines[j].line_number, line_num + (after_count as u64 + 1));
                     after_count += 1;
                     if after_count >= options.after_context {
                         break;
@@ -93,7 +93,7 @@ mod search_combined_context_tests {
                 );
                 
                 if match_line_index + expected_after_context < file_lines.len() && 
-                   (after_count == 0 || i + after_count + 1 < results.len() && !results[i + after_count + 1].is_context) {
+                   (after_count == 0 || i + after_count + 1 < results.lines.len() && !results.lines[i + after_count + 1].is_context) {
                     assert_eq!(after_count, expected_after_context, 
                                "Should have {} lines after the match", expected_after_context);
                 }
@@ -118,11 +118,11 @@ mod search_combined_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Group results by file to check for overlapping contexts
         let mut file_results: std::collections::HashMap<_, Vec<_>> = std::collections::HashMap::new();
-        for result in &results {
+        for result in &results.lines {
             file_results.entry(result.file_path.clone())
                         .or_insert_with(Vec::new)
                         .push(result);

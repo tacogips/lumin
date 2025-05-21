@@ -23,17 +23,17 @@ mod search_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Should find "fn" in multiple Rust files but not in hidden files
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // All results should contain the pattern
-        for result in &results {
+        for result in &results.lines {
             assert!(result.line_content.contains(pattern));
         }
 
         // Should not find anything in .hidden directory (respects gitignore)
         assert!(
             !results
-                .iter()
+                .lines.iter()
                 .any(|r| r.file_path.to_string_lossy().contains(".hidden"))
         );
 
@@ -53,7 +53,7 @@ mod search_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Should not find lowercase "fn" when searching for "Fn" with case sensitivity
-        assert!(!results.iter().any(|r| r.line_content.contains("fn ")));
+        assert!(!results.lines.iter().any(|r| r.line_content.contains("fn ")));
 
         Ok(())
     }
@@ -71,7 +71,7 @@ mod search_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Should find lowercase "fn" when searching for "FN" case-insensitively
-        assert!(results.iter().any(|r| r.line_content.contains("fn ")));
+        assert!(results.lines.iter().any(|r| r.line_content.contains("fn ")));
 
         Ok(())
     }
@@ -103,7 +103,7 @@ mod search_tests {
         // Should NOT find the pattern in .hidden directory
         assert!(
             !results
-                .iter()
+                .lines.iter()
                 .any(|r| r.file_path.to_string_lossy().contains(".hidden")),
             "Found .hidden files when respecting gitignore"
         );
@@ -147,7 +147,7 @@ mod search_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Should find no matches
-        assert!(results.is_empty());
+        assert!(results.lines.is_empty());
 
         Ok(())
     }
@@ -165,10 +165,10 @@ mod search_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Should find matches
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // None of the results should have trailing newlines
-        for result in &results {
+        for result in &results.lines {
             assert!(!result.line_content.ends_with('\n'), 
                    "line_content contains trailing newline: {:?}", result.line_content);
         }
@@ -192,13 +192,13 @@ mod search_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Should find matches
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
         
         // Should have some context lines
-        assert!(results.iter().any(|r| r.is_context));
+        assert!(results.lines.iter().any(|r| r.is_context));
 
         // None of the results (including context lines) should have trailing newlines
-        for result in &results {
+        for result in &results.lines {
             assert!(!result.line_content.ends_with('\n'), 
                    "line_content contains trailing newline: {:?}", result.line_content);
         }

@@ -144,17 +144,17 @@ fn main() -> Result<()> {
 
             let results = search_files(pattern, directory, &options)?;
 
-            if results.is_empty() {
+            if results.lines.is_empty() {
                 println!("No matches found.");
             } else {
                 // Count actual matches (not context lines)
-                let match_count = results.iter().filter(|r| !r.is_context).count();
+                let match_count = results.lines.iter().filter(|r| !r.is_context).count();
                 println!("Found {} matches:", match_count);
                 
                 let mut last_file = None;
                 let mut last_line_number = 0;
                 
-                for result in results {
+                for result in results.lines {
                     // Print separator between discontinuous results
                     if let Some(last) = &last_file {
                         if &result.file_path != last || result.line_number > last_line_number + 1 {

@@ -20,18 +20,18 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
     let results = search_files(pattern, directory, &options)?;
 
     // Should find matches in files where "PATTERN" appears in uppercase
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
 
     // Now there are more matches with our new test files
     // Just verify that we found the key matches
     let found_sample = results
-        .iter()
+        .lines.iter()
         .any(|r| r.file_path.to_string_lossy().contains("sample.txt"));
     let found_markdown = results
-        .iter()
+        .lines.iter()
         .any(|r| r.file_path.to_string_lossy().contains("markdown.md"));
     let found_file_rs = results
-        .iter()
+        .lines.iter()
         .any(|r| r.file_path.to_string_lossy().contains("file.rs"));
 
     assert!(found_sample, "Should find PATTERN in sample.txt");
@@ -40,7 +40,7 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
 
     // Verify matches found in expected files
     let file_paths: Vec<String> = results
-        .iter()
+        .lines.iter()
         .map(|r| r.file_path.to_string_lossy().to_string())
         .collect();
 
@@ -69,12 +69,12 @@ fn test_search_pattern_case_insensitive() -> Result<()> {
     let results = search_files(pattern, directory, &options)?;
 
     // Should find both uppercase and lowercase matches
-    assert!(!results.is_empty());
-    assert!(results.len() >= 5); // Should find at least 5 matches across all files
+    assert!(!results.lines.is_empty());
+    assert!(results.lines.len() >= 5); // Should find at least 5 matches across all files
 
     // Verify matches found in expected files
     let file_paths: Vec<String> = results
-        .iter()
+        .lines.iter()
         .map(|r| r.file_path.to_string_lossy().to_string())
         .collect();
 
@@ -108,17 +108,17 @@ fn test_search_with_gitignore_respect() -> Result<()> {
     // Should not find matches in .hidden/secret.txt, temp.tmp or log.log
     assert!(
         results
-            .iter()
+            .lines.iter()
             .all(|r| !r.file_path.to_string_lossy().contains(".hidden"))
     );
     assert!(
         results
-            .iter()
+            .lines.iter()
             .all(|r| !r.file_path.to_string_lossy().ends_with(".tmp"))
     );
     assert!(
         results
-            .iter()
+            .lines.iter()
             .all(|r| !r.file_path.to_string_lossy().ends_with(".log"))
     );
 
@@ -145,10 +145,10 @@ fn test_search_without_gitignore_respect() -> Result<()> {
     let results = search_files(pattern, directory, &options)?;
 
     // Should find matches in temp.tmp and log.log
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
     assert!(
         results
-            .iter()
+            .lines.iter()
             .any(|r| r.file_path.to_string_lossy().ends_with(".tmp")
                 || r.file_path.to_string_lossy().ends_with(".log"))
     );

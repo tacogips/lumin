@@ -30,16 +30,16 @@ mod search_edge_case_tests {
         let results = search_files("match the pattern", &file_path, &options)?;
         
         // Verify results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
         
         // Find the match result
-        let match_result = results.iter().find(|r| !r.is_context).unwrap();
+        let match_result = results.lines.iter().find(|r| !r.is_context).unwrap();
         
         // The match should be on line 1 (1-based indexing)
         assert_eq!(match_result.line_number, 1);
         
         // There should be no context lines before the match (since it's the first line)
-        let context_lines_before = results.iter()
+        let context_lines_before = results.lines.iter()
             .filter(|r| r.is_context && r.line_number < match_result.line_number)
             .count();
         
@@ -67,16 +67,16 @@ mod search_edge_case_tests {
         let results = search_files("match the pattern", &file_path, &options)?;
         
         // Verify results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
         
         // Find the match result
-        let match_result = results.iter().find(|r| !r.is_context).unwrap();
+        let match_result = results.lines.iter().find(|r| !r.is_context).unwrap();
         
         // The match should be on line 5 (1-based indexing)
         assert_eq!(match_result.line_number, 5);
         
         // There should be no context lines after the match (since it's the last line)
-        let context_lines_after = results.iter()
+        let context_lines_after = results.lines.iter()
             .filter(|r| r.is_context && r.line_number > match_result.line_number)
             .count();
         
@@ -105,19 +105,19 @@ mod search_edge_case_tests {
         let results = search_files("MATCH_THIS", &file_path, &options)?;
         
         // Verify results - should have 2 matches
-        assert_eq!(results.iter().filter(|r| !r.is_context).count(), 2);
+        assert_eq!(results.lines.iter().filter(|r| !r.is_context).count(), 2);
         
         // Get matches by line number
-        let first_match = results.iter().find(|r| !r.is_context && r.line_number == 1).unwrap();
-        let last_match = results.iter().find(|r| !r.is_context && r.line_number == 5).unwrap();
+        let first_match = results.lines.iter().find(|r| !r.is_context && r.line_number == 1).unwrap();
+        let last_match = results.lines.iter().find(|r| !r.is_context && r.line_number == 5).unwrap();
         
         // Verify first match
-        let context_lines_before_first = results.iter()
+        let context_lines_before_first = results.lines.iter()
             .filter(|r| r.is_context && r.line_number < first_match.line_number)
             .count();
         
         // Verify last match
-        let context_lines_after_last = results.iter()
+        let context_lines_after_last = results.lines.iter()
             .filter(|r| r.is_context && r.line_number > last_match.line_number)
             .count();
         
@@ -126,7 +126,7 @@ mod search_edge_case_tests {
         assert_eq!(context_lines_after_last, 0, "There should be no context lines after the match on the last line");
         
         // Check that context between matches is present
-        let lines_between = results.iter()
+        let lines_between = results.lines.iter()
             .filter(|r| r.is_context && r.line_number > first_match.line_number && r.line_number < last_match.line_number)
             .count();
         
@@ -156,15 +156,15 @@ mod search_edge_case_tests {
         let results = search_files("match pattern", &file_path, &options)?;
         
         // Verify results
-        assert_eq!(results.len(), 1, "Should have exactly one result");
+        assert_eq!(results.lines.len(), 1, "Should have exactly one result");
         
         // There should be no context lines at all
-        assert_eq!(results.iter().filter(|r| r.is_context).count(), 0, 
+        assert_eq!(results.lines.iter().filter(|r| r.is_context).count(), 0, 
                    "There should be no context lines in a single-line file");
         
         // The match should be on line 1
-        assert_eq!(results[0].line_number, 1);
-        assert!(!results[0].is_context);
+        assert_eq!(results.lines[0].line_number, 1);
+        assert!(!results.lines[0].is_context);
         
         Ok(())
     }

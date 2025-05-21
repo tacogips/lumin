@@ -38,7 +38,7 @@ fn test_full_workflow() -> Result<()> {
     };
 
     let search_results = search_files(search_pattern, directory, &search_options)?;
-    assert!(!search_results.is_empty());
+    assert!(!search_results.lines.is_empty());
 
     // 3. Generate a tree structure of the directory
     let tree_options = TreeOptions {
@@ -51,7 +51,7 @@ fn test_full_workflow() -> Result<()> {
     assert!(!tree_results.is_empty());
 
     // 4. View the first file found in the search results
-    if let Some(first_match) = search_results.first() {
+    if let Some(first_match) = search_results.lines.first() {
         let view_options = ViewOptions::default();
         let view_result = view_file(&first_match.file_path, &view_options)?;
 
@@ -95,9 +95,9 @@ fn test_multi_level_search() -> Result<()> {
     let search_results = search_files("level", directory, &search_options)?;
 
     // Verify pattern was found in files at different nesting levels
-    assert!(!search_results.is_empty());
+    assert!(!search_results.lines.is_empty());
     let search_paths: Vec<_> = search_results
-        .iter()
+        .lines.iter()
         .map(|r| r.file_path.to_string_lossy().to_string())
         .collect();
 
