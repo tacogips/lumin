@@ -16,12 +16,23 @@ pub struct ViewOptions {
     /// Files larger than this will be rejected to prevent excessive memory usage.
     /// A value of None means no limit.
     pub max_size: Option<usize>,
+
+    // the response contains line contents from(and including) this line number
+    // line count
+    // only applied if it's a text file
+    pub line_from: Option<usize>,
+
+    // the response contains line contents until(and including) this line number
+    // only applied if it's a text file
+    pub line_to: Option<usize>,
 }
 
 impl Default for ViewOptions {
     fn default() -> Self {
         Self {
             max_size: Some(10 * 1024 * 1024), // Default to 10MB limit
+            line_from: None,
+            line_to: None,
         }
     }
 }
@@ -39,7 +50,7 @@ pub enum FileContents {
     #[serde(rename = "text")]
     Text {
         /// The actual text content of the file
-        content: String,
+        content: TextContent,
         /// Metadata about the text content
         metadata: TextMetadata,
     },
@@ -61,6 +72,21 @@ pub enum FileContents {
         /// Metadata about the image file
         metadata: ImageMetadata,
     },
+}
+
+/// Metadata for text files.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TextContent {
+    pub line_contents: Vec<LineContent>,
+}
+
+/// Metadata for text files.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct LineContent {
+    /// Number of lines in the text file
+    pub line_count: usize,
+    /// Number of characters in the text file
+    pub line: String,
 }
 
 /// Metadata for text files.
