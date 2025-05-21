@@ -140,6 +140,8 @@ fn main() -> Result<()> {
                 depth: if *max_depth == 0 { None } else { Some(*max_depth) },
                 before_context: *before_context,
                 after_context: *after_context,
+                skip: None,
+                take: None,
             };
 
             let results = search_files(pattern, directory, &options)?;

@@ -15,6 +15,8 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
@@ -64,6 +66,8 @@ fn test_search_pattern_case_insensitive() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
@@ -101,6 +105,8 @@ fn test_search_with_gitignore_respect() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
 
     let results = search_files(pattern, directory, &options)?;
@@ -140,6 +146,8 @@ fn test_search_without_gitignore_respect() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
 
     let results = search_files(pattern, directory, &options)?;

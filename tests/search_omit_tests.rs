@@ -26,6 +26,8 @@ fn test_content_omission() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
     
     let results = search_files("pattern", temp_dir.path(), &options)?;
@@ -45,6 +47,8 @@ fn test_content_omission() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
     
     let omitted_results = search_files("pattern", temp_dir.path(), &omit_options)?;
@@ -76,6 +80,8 @@ fn test_content_omission() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
     
     let omitted_results2 = search_files("pattern", temp_dir.path(), &omit_options2)?;
@@ -110,6 +116,8 @@ fn test_content_omission() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
     
     let long_match_results = search_files("verylongpatternstring", temp_dir.path(), &small_omit_options)?;

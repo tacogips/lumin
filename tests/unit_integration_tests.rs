@@ -35,6 +35,8 @@ fn test_full_workflow() -> Result<()> {
         depth: Some(20),
         before_context: 0,
         after_context: 0,
+        skip: None,
+        take: None,
     };
 
     let search_results = search_files(search_pattern, directory, &search_options)?;

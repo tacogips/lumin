@@ -93,6 +93,8 @@ use crate::traverse::common;
 ///     depth: Some(20),
 ///     before_context: 0, // No lines before matches
 ///     after_context: 0, // Only show matching lines, no context
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// // Case-insensitive search, respecting gitignore files, with content truncation
@@ -105,6 +107,8 @@ use crate::traverse::common;
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// // File type-focused search (only search specific file types)
@@ -117,6 +121,8 @@ use crate::traverse::common;
 ///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 0,
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// // Context-focused search (like grep -B3 -A2 pattern)
@@ -129,6 +135,8 @@ use crate::traverse::common;
 ///     depth: Some(20),
 ///     before_context: 3, // Show 3 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
+///     skip: None,
+///     take: None,
 /// };
 /// ```
 pub struct SearchOptions {
@@ -258,7 +266,7 @@ pub struct SearchOptions {
     /// the body of a function after matching its definition, or viewing the full error message
     /// after matching an error indicator.
     pub after_context: usize,
-    
+
     /// Optional number of search result items to skip (for pagination).
     ///
     /// When set to `Some(n)`, the function will skip the first `n` search result items.
@@ -290,7 +298,7 @@ pub struct SearchOptions {
     ///
     /// For pagination with a page size of 10, you would use:
     /// - Page 1: `skip: None, take: Some(10)` or `skip: Some(0), take: Some(10)`
-    /// - Page 2: `skip: Some(10), take: Some(10)` 
+    /// - Page 2: `skip: Some(10), take: Some(10)`
     /// - Page 3: `skip: Some(20), take: Some(10)`
     pub take: Option<usize>,
 }
@@ -339,7 +347,7 @@ impl SearchResult {
     ///     total_number: 25,
     ///     lines: vec![/* SearchResultLine items */],
     /// };
-    /// 
+    ///
     /// // Extract the first 10 results
     /// let first_page = my_search_results.clone().split(1, 10);
     ///
@@ -350,11 +358,13 @@ impl SearchResult {
         // Convert from 1-based to 0-based indexing
         let from_idx = from.saturating_sub(1);
         let to_idx = to.min(self.lines.len());
-        
+
         // Create a new result with the subset of lines
         SearchResult {
             total_number: self.total_number,
-            lines: self.lines.into_iter()
+            lines: self
+                .lines
+                .into_iter()
                 .skip(from_idx)
                 .take(to_idx.saturating_sub(from_idx))
                 .collect(),
@@ -379,7 +389,7 @@ impl SearchResult {
     ///     total_number: 25,
     ///     lines: vec![/* SearchResultLine items */],
     /// };
-    /// 
+    ///
     /// // Sort the results by file path and line number
     /// my_search_results.sort_by_path_and_line();
     /// ```
@@ -416,11 +426,11 @@ impl SearchResult {
 /// match search_files(pattern, directory, &options) {
 ///     Ok(search_result) => {
 ///         println!("Total matches: {}", search_result.total_number);
-///         
+///
 ///         // Get the first 10 results for pagination
 ///         let page_1 = search_result.split(1, 10);
 ///         println!("Showing results 1-10 of {}", page_1.total_number);
-///         
+///
 ///         for result in page_1.lines {
 ///             println!("Found '{}' in {}:{}: {}{}",
 ///                      pattern,
@@ -487,12 +497,21 @@ pub struct SearchResultLine {
     pub is_context: bool,
 }
 
+pub fn search_files_total_match_line_number(
+    pattern: &str,
+    directory: &Path,
+    options: &SearchOptions,
+) -> Result<usize> {
+    let result = search_files(pattern, directory, options)?;
+    Ok(result.total_number)
+}
+
 /// Searches for the specified regex pattern in files within the given directory.
 ///
 /// This function performs a regex-based search across all files in the specified directory
 /// (and subdirectories), applying filters based on the provided options. It uses the
 /// regex syntax provided by the underlying `grep` crate.
-/// 
+///
 /// Note: The current implementation is naive and not optimized for performance.
 /// This will be improved in future versions.
 ///
@@ -582,7 +601,7 @@ pub struct SearchResultLine {
 ///   - Whether the line is a context line or a direct match
 ///
 /// The results are not sorted in any particular order.
-/// 
+///
 /// The `SearchResult` structure also provides a `split` method for pagination.
 ///
 /// # Errors
@@ -606,10 +625,10 @@ pub struct SearchResultLine {
 /// ).unwrap();
 ///
 /// println!("Found {} matches", search_result.total_number);
-/// 
+///
 /// // Iterate through the result lines
 /// for line in &search_result.lines {
-///     println!("{}: {}:{}", 
+///     println!("{}: {}:{}",
 ///         line.file_path.display(),
 ///         line.line_number,
 ///         line.line_content);
@@ -630,6 +649,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 0,
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// let search_result = search_files(
@@ -657,6 +678,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 5, // Show 5 lines after each match
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// let results = search_files(
@@ -685,6 +708,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 0,
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// let results = search_files(
@@ -711,6 +736,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 1,
 ///     after_context: 1,
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// let results = search_files(
@@ -738,6 +765,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 3, // Show 3 lines of context after each match
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// let search_result = search_files(
@@ -778,7 +807,7 @@ pub struct SearchResultLine {
 /// let results = search_files("hello world", Path::new("docs"), &SearchOptions::default()).unwrap();
 ///
 /// // Case-sensitive search for exact match
-/// let options = SearchOptions { case_sensitive: true, ..SearchOptions::default() };
+/// let options = SearchOptions { case_sensitive: true, skip: None, take: None, ..SearchOptions::default() };
 /// let results = search_files("ERROR", Path::new("logs"), &options).unwrap();
 ///
 /// // Matching words with word boundaries
@@ -1024,6 +1053,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 0,
+///     skip: None,
+///     take: None,
 /// };
 /// let results = search_files(
 ///     function_pattern,
@@ -1065,6 +1096,8 @@ pub struct SearchResultLine {
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
+///     skip: None,
+///     take: None,
 /// };
 ///
 /// let long_results = search_files(
@@ -1107,6 +1140,7 @@ pub fn search_files(
     .context("Failed to create regular expression matcher")?;
 
     // Build the list of files to search
+    // TODO: Implement parallel search by using callbacks in the file traverser
     let files =
         collect_files(directory, options).context("Failed to collect files for searching")?;
 
@@ -1360,33 +1394,33 @@ pub fn search_files(
 
     // Create the SearchResult with the total count and lines
     let total_number = result_lines.len();
-    
+
     // Create the result and sort it by file path and line number
     let mut result = SearchResult {
         total_number,
         lines: result_lines,
     };
-    
+
     // Sort the results for consistent ordering
     result.sort_by_path_and_line();
-    
+
     // Apply pagination if skip and take are specified
     if options.skip.is_some() || options.take.is_some() {
         // Calculate the 1-based indices for split
         let from = match options.skip {
             Some(skip) => skip + 1, // Convert 0-based skip to 1-based from
-            None => 1, // Start from the first result if skip is None
+            None => 1,              // Start from the first result if skip is None
         };
-        
+
         let to = match options.take {
             Some(take) => from + take - 1, // Calculate the last index (inclusive)
-            None => result.lines.len(), // Use all results if take is None
+            None => result.lines.len(),    // Use all results if take is None
         };
-        
+
         // Use the built-in split method to paginate the results
         result = result.split(from, to);
     }
-    
+
     Ok(result)
 }
 
@@ -1439,4 +1473,159 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
             Ok(files)
         },
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    /// Creates a temporary directory with test files for pagination testing
+    fn create_test_files(dir: &Path) -> Result<()> {
+        // Create a set of test files with known content
+        let test_data = [
+            (
+                "file1.txt",
+                "Line 1\nLine with match pattern here\nLine 3\n",
+            ),
+            (
+                "file2.txt",
+                "No match\nAnother line\nHas pattern in this line\n",
+            ),
+            (
+                "file3.txt",
+                "pattern at start of line\nNo match line\nEnding line\n",
+            ),
+            (
+                "file4.txt",
+                "Regular line\nHas pattern twice on this pattern line\nLast line\n",
+            ),
+            (
+                "file5.txt",
+                "First line\nSecond line with pattern content\nLast content\n",
+            ),
+        ];
+
+        for (filename, content) in &test_data {
+            let file_path = dir.join(filename);
+            let mut file = File::create(file_path)?;
+            file.write_all(content.as_bytes())?;
+        }
+
+        Ok(())
+    }
+
+    /// Creates a base SearchOptions object with common test settings
+    fn create_base_options() -> SearchOptions {
+        SearchOptions {
+            case_sensitive: false,
+            respect_gitignore: false, // No gitignore in our temp dir
+            exclude_glob: None,
+            include_glob: None,
+            match_content_omit_num: None,
+            depth: None,
+            before_context: 0,
+            after_context: 0,
+            skip: None,
+            take: None,
+        }
+    }
+
+    #[test]
+    fn test_pagination() -> Result<()> {
+        // Create a temporary directory for our test files
+        let temp_dir = TempDir::new()?;
+        let temp_path = temp_dir.path();
+
+        // Create test files in the temporary directory
+        create_test_files(temp_path)?;
+
+        // The pattern to search for (appears in all test files)
+        let pattern = "pattern";
+
+        // Test case 1: No pagination (should return all results)
+        let options = create_base_options();
+        let results = search_files(pattern, temp_path, &options)?;
+        assert_eq!(
+            results.total_number, 5,
+            "Should find matches in all 5 files"
+        );
+        assert_eq!(results.lines.len(), 5, "Should return all 5 matching lines");
+
+        // Test case 2: Skip first 2 results
+        let mut options_skip = create_base_options();
+        options_skip.skip = Some(2);
+        let results_skip = search_files(pattern, temp_path, &options_skip)?;
+        assert_eq!(
+            results_skip.total_number, 5,
+            "Total count should still be 5"
+        );
+        assert_eq!(
+            results_skip.lines.len(),
+            3,
+            "Should return 3 matching lines after skipping 2"
+        );
+
+        // Test case 3: Take only 2 results
+        let mut options_take = create_base_options();
+        options_take.take = Some(2);
+        let results_take = search_files(pattern, temp_path, &options_take)?;
+        assert_eq!(
+            results_take.total_number, 5,
+            "Total count should still be 5"
+        );
+        assert_eq!(
+            results_take.lines.len(),
+            2,
+            "Should return only 2 matching lines"
+        );
+
+        // Test case 4: Skip 1, take 3
+        let mut options_skip_take = create_base_options();
+        options_skip_take.skip = Some(1);
+        options_skip_take.take = Some(3);
+        let results_skip_take = search_files(pattern, temp_path, &options_skip_take)?;
+        assert_eq!(
+            results_skip_take.total_number, 5,
+            "Total count should still be 5"
+        );
+        assert_eq!(
+            results_skip_take.lines.len(),
+            3,
+            "Should return 3 matching lines"
+        );
+
+        // Test case 5: Skip beyond end of results
+        let mut options_skip_all = create_base_options();
+        options_skip_all.skip = Some(10); // More than we have results
+        let results_skip_all = search_files(pattern, temp_path, &options_skip_all)?;
+        assert_eq!(
+            results_skip_all.total_number, 5,
+            "Total count should still be 5"
+        );
+        assert_eq!(
+            results_skip_all.lines.len(),
+            0,
+            "Should return 0 matching lines when skipped all"
+        );
+
+        // Test case 6: Small take with large skip
+        let mut options_edge = create_base_options();
+        options_edge.skip = Some(4);
+        options_edge.take = Some(10); // More than remaining after skip
+        let results_edge = search_files(pattern, temp_path, &options_edge)?;
+        assert_eq!(
+            results_edge.total_number, 5,
+            "Total count should still be 5"
+        );
+        assert_eq!(
+            results_edge.lines.len(),
+            1,
+            "Should return only 1 matching line"
+        );
+
+        Ok(())
+    }
 }
