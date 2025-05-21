@@ -1,0 +1,5 @@
+This is a test file
+It contains the word test multiple times
+Test with uppercase
+test with lowercase
+Another line to test
