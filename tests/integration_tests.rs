@@ -43,7 +43,7 @@ mod integration_tests {
         }
 
         // We should find at least one function definition
-        assert!(!search_results.lines.is_empty());
+        assert!(!search_results.is_empty());
 
         Ok(())
     }
@@ -59,7 +59,7 @@ mod integration_tests {
         let search_results = search_files("^# ", Path::new(TEST_DIR), &search_options)?;
 
         // There should be multiple markdown files with headings
-        assert!(!search_results.is_empty());
+        assert!(!search_results.lines.is_empty());
 
         // Now view each file that matched
         let view_options = ViewOptions::default();

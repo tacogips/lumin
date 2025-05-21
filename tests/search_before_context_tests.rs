@@ -124,12 +124,12 @@ mod search_before_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Create a mapping of file paths to line numbers with their is_context flag
         let mut file_lines = std::collections::HashMap::new();
         
-        for result in &results {
+        for result in &results.lines {
             let entries = file_lines
                 .entry(result.file_path.clone())
                 .or_insert_with(Vec::new);
@@ -180,10 +180,10 @@ mod search_before_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Find a match and verify all preceding lines are included as context
-        for (i, result) in results.iter().enumerate() {
+        for (i, result) in results.lines.iter().enumerate() {
             if !result.is_context && result.line_content.contains(pattern) {
                 // Found a match, the match's line number minus 1 should be the number of preceding lines
                 let expected_context_lines = result.line_number - 1;
@@ -191,7 +191,7 @@ mod search_before_context_tests {
                 // Count context lines in the results preceding this match
                 let mut context_count = 0;
                 for j in (0..i).rev() {
-                    if results[j].file_path != result.file_path || !results[j].is_context {
+                    if results.lines[j].file_path != result.file_path || !results.lines[j].is_context {
                         break;
                     }
                     context_count += 1;
@@ -221,11 +221,11 @@ mod search_before_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Check that matches have content_omitted=true (if long enough)
         // and context lines have content_omitted=false
-        for result in &results {
+        for result in &results.lines {
             if !result.is_context {
                 // This is a match - may have content omitted if the line is long enough
                 if result.line_content.len() > 20 + pattern.len() { // rough estimate

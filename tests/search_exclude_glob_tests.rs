@@ -41,7 +41,7 @@ mod search_exclude_glob_tests {
         
         // Should not find any JSON files
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Found JSON files despite excluding them"
         );
 
@@ -70,11 +70,11 @@ mod search_exclude_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should still find matches
-        assert!(!results.is_empty(), "Expected to find matches in non-excluded files");
+        assert!(!results.lines.is_empty(), "Expected to find matches in non-excluded files");
         
         // Should not find any JSON or YAML files
         assert!(
-            !results.iter().any(|r| {
+            !results.lines.iter().any(|r| {
                 let path = r.file_path.to_string_lossy();
                 path.ends_with(".json") || path.ends_with(".yaml")
             }),
@@ -102,7 +102,7 @@ mod search_exclude_glob_tests {
         // Verify we have files in the 'docs' directory
         let all_results = search_files(pattern, Path::new(TEST_DIR), &SearchOptions::default())?;
         assert!(
-            all_results.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
+            all_results.lines.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
             "Expected to find the pattern in the docs directory"
         );
         
@@ -113,11 +113,11 @@ mod search_exclude_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should still find matches
-        assert!(!results.is_empty(), "Expected to find matches in non-excluded directories");
+        assert!(!results.lines.is_empty(), "Expected to find matches in non-excluded directories");
         
         // Should not find anything in the docs directory
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
             "Found files in the docs directory despite excluding it"
         );
 
@@ -153,7 +153,7 @@ mod search_exclude_glob_tests {
         
         // Should not find lowercase .json files
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Found .json files despite excluding them with case sensitivity"
         );
         
@@ -166,7 +166,7 @@ mod search_exclude_glob_tests {
         
         // Should not find .json files
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Found .json files despite excluding them case-insensitively"
         );
         
@@ -178,7 +178,7 @@ mod search_exclude_glob_tests {
         
         // Should not find files with these specific extensions
         assert!(
-            !results.iter().any(|r| {
+            !results.lines.iter().any(|r| {
                 let path = r.file_path.to_string_lossy();
                 path.ends_with(".JSON") || path.ends_with(".JsonML")
             }),
@@ -211,11 +211,11 @@ mod search_exclude_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should still find matches in all file types
-        assert!(!results.is_empty(), "Expected to find matches");
+        assert!(!results.lines.is_empty(), "Expected to find matches");
         
         // Should find JSON files since exclusion list is empty
         assert!(
-            results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Did not find JSON files despite empty exclusion list"
         );
 
@@ -244,13 +244,13 @@ mod search_exclude_glob_tests {
         
         // Should not find markdown files
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".md")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".md")),
             "Found markdown files despite excluding them"
         );
         
         // Should not find files in .hidden directory (gitignore)
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().contains(".hidden")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().contains(".hidden")),
             "Found hidden files despite respecting gitignore"
         );
 

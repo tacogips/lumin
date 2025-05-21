@@ -158,7 +158,7 @@ mod search_include_glob_tests {
         
         // Should only find lowercase .json files, not .JSON or .JsonML
         assert!(
-            results.iter().all(|r| r.file_path.to_string_lossy().ends_with(".json")),
+            results.lines.iter().all(|r| r.file_path.to_string_lossy().ends_with(".json")),
             "Found non-lowercase .json files despite case sensitivity"
         );
         
@@ -171,7 +171,7 @@ mod search_include_glob_tests {
         
         // Should find all json files regardless of case
         assert!(
-            results.iter().all(|r| {
+            results.lines.iter().all(|r| {
                 let path = r.file_path.to_string_lossy();
                 path.ends_with(".json") || path.ends_with(".JSON") || path.ends_with(".JsonML")
             }),
@@ -199,7 +199,7 @@ mod search_include_glob_tests {
         
         // First ensure we have matches with default options
         let default_results = search_files(pattern, Path::new(TEST_DIR), &SearchOptions::default())?;
-        assert!(!default_results.is_empty(), "Expected to find matches with default options");
+        assert!(!default_results.lines.is_empty(), "Expected to find matches with default options");
         
         // Create options with an empty include_glob list
         let mut options = SearchOptions::default();
@@ -208,7 +208,7 @@ mod search_include_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should find no matches as empty include_glob matches nothing
-        assert!(results.is_empty(), "Expected to find no matches with empty include_glob");
+        assert!(results.lines.is_empty(), "Expected to find no matches with empty include_glob");
 
         // Cleanup
         for file in &additional_files {
@@ -230,13 +230,13 @@ mod search_include_glob_tests {
         // With include_glob = None (default), should find all files
         let default_options = SearchOptions::default();
         let default_results = search_files(pattern, Path::new(TEST_DIR), &default_options)?;
-        assert!(!default_results.is_empty(), "Expected to find matches with include_glob = None");
+        assert!(!default_results.lines.is_empty(), "Expected to find matches with include_glob = None");
         
         // With include_glob = Some(vec![]), should find nothing
         let mut empty_options = SearchOptions::default();
         empty_options.include_glob = Some(vec![]);
         let empty_results = search_files(pattern, Path::new(TEST_DIR), &empty_options)?;
-        assert!(empty_results.is_empty(), "Expected to find no matches with include_glob = Some(empty vec)");
+        assert!(empty_results.lines.is_empty(), "Expected to find no matches with include_glob = Some(empty vec)");
         
         // Cleanup
         for file in &additional_files {
@@ -263,13 +263,13 @@ mod search_include_glob_tests {
         
         // Should find markdown files
         assert!(
-            results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".md")),
+            results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".md")),
             "Expected to find markdown files"
         );
         
         // Should not find log files despite including them (because of gitignore)
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".log")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().ends_with(".log")),
             "Found log files despite them being in gitignore"
         );
 
@@ -298,17 +298,17 @@ mod search_include_glob_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
         // Should find matches
-        assert!(!results.is_empty(), "Expected to find matches in text files outside docs");
+        assert!(!results.lines.is_empty(), "Expected to find matches in text files outside docs");
         
         // Should only find .txt files
         assert!(
-            results.iter().all(|r| r.file_path.to_string_lossy().ends_with(".txt")),
+            results.lines.iter().all(|r| r.file_path.to_string_lossy().ends_with(".txt")),
             "Found non-txt files despite only including txt files"
         );
         
         // Should not find any files in the docs directory
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
+            !results.lines.iter().any(|r| r.file_path.to_string_lossy().contains("/docs/")),
             "Found files in docs directory despite excluding it"
         );
 
@@ -356,9 +356,9 @@ mod search_include_glob_tests {
         
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
-        assert!(!results.is_empty(), "Expected to find matches with brace expansion");
+        assert!(!results.lines.is_empty(), "Expected to find matches with brace expansion");
         assert!(
-            results.iter().all(|r| {
+            results.lines.iter().all(|r| {
                 let path = r.file_path.to_string_lossy();
                 path.ends_with(".rs") || path.ends_with(".py")
             }),
@@ -371,9 +371,9 @@ mod search_include_glob_tests {
         
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
-        assert!(!results.is_empty(), "Expected to find matches with character class");
+        assert!(!results.lines.is_empty(), "Expected to find matches with character class");
         assert!(
-            results.iter().all(|r| {
+            results.lines.iter().all(|r| {
                 let path = r.file_path.to_string_lossy();
                 path.ends_with("test1.rs") || path.ends_with("test2.rs")
             }),
@@ -386,9 +386,9 @@ mod search_include_glob_tests {
         
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
         
-        assert!(!results.is_empty(), "Expected to find matches with double asterisk");
+        assert!(!results.lines.is_empty(), "Expected to find matches with double asterisk");
         assert!(
-            results.iter().any(|r| r.file_path.to_string_lossy().contains("nested/deep/file.txt")),
+            results.lines.iter().any(|r| r.file_path.to_string_lossy().contains("nested/deep/file.txt")),
             "Failed to find deeply nested file with double asterisk"
         );
 

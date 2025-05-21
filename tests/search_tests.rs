@@ -127,7 +127,7 @@ mod search_tests {
         // Should find the pattern in .hidden directory
         assert!(
             results
-                .iter()
+                .lines.iter()
                 .any(|r| r.file_path.to_string_lossy().contains(".hidden")),
             "Did not find .hidden files when ignoring gitignore"
         );

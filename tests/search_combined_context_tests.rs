@@ -81,7 +81,7 @@ mod search_combined_context_tests {
                 
                 if match_line_index >= options.before_context && 
                    (before_count == 0 || 
-                    (i > before_count + 1 && !results[i - before_count - 1].is_context)) {
+                    (i > before_count + 1 && !results.lines[i - before_count - 1].is_context)) {
                     assert_eq!(before_count, options.before_context, 
                                "Should have {} lines before the match", options.before_context);
                 }
@@ -186,10 +186,10 @@ mod search_combined_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Find a match and verify the entire file is included as context
-        for (_i, result) in results.iter().enumerate() {
+        for (_i, result) in results.lines.iter().enumerate() {
             if !result.is_context && result.line_content.contains(pattern) {
                 // Found a match
                 let file_path = &result.file_path;
@@ -197,7 +197,7 @@ mod search_combined_context_tests {
                 let file_lines = file_content.lines().count() as u64;
                 
                 // Count all results for this file
-                let file_results_count = results.iter()
+                let file_results_count = results.lines.iter()
                     .filter(|r| r.file_path == *file_path)
                     .count() as u64;
                 
@@ -228,17 +228,17 @@ mod search_combined_context_tests {
         let results = search_files(pattern, Path::new(TEST_DIR), &options)?;
 
         // Verify that we have results
-        assert!(!results.is_empty());
+        assert!(!results.lines.is_empty());
 
         // Verify proper flagging of context vs matches and content omission
-        let matches_count = results.iter().filter(|r| !r.is_context).count();
-        let context_count = results.iter().filter(|r| r.is_context).count();
+        let matches_count = results.lines.iter().filter(|r| !r.is_context).count();
+        let context_count = results.lines.iter().filter(|r| r.is_context).count();
         
         assert!(matches_count > 0, "Should have at least one match");
         assert!(context_count > 0, "Should have at least one context line");
 
         // Content omission should only apply to matches, not context lines
-        for result in &results {
+        for result in &results.lines {
             if result.is_context {
                 assert!(!result.content_omitted, "Context lines should not have content omitted");
             } else if result.line_content.len() > 20 + pattern.len() {

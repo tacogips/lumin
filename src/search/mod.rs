@@ -295,12 +295,19 @@ impl SearchResult {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
+    /// use lumin::search::SearchResult;
+    /// // Create some search results
+    /// let my_search_results = SearchResult {
+    ///     total_number: 25,
+    ///     lines: vec![/* SearchResultLine items */],
+    /// };
+    /// 
     /// // Extract the first 10 results
-    /// let first_page = search_results.split(1, 10);
+    /// let first_page = my_search_results.clone().split(1, 10);
     ///
     /// // Extract the second page of 10 results
-    /// let second_page = search_results.split(11, 20);
+    /// let second_page = my_search_results.split(11, 20);
     /// ```
     pub fn split(self, from: usize, to: usize) -> Self {
         // Convert from 1-based to 0-based indexing
@@ -991,7 +998,7 @@ pub struct SearchResultLine {
 /// ).unwrap();
 ///
 /// // Process results, showing both matches and context lines differently
-/// for result in long_results {
+/// for result in long_results.lines {
 ///     if result.is_context {
 ///         // Display context lines differently
 ///         println!("{}: [Context] {}",

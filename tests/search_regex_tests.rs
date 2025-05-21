@@ -231,11 +231,11 @@ fn test_search_with_word_followed_by() -> Result<()> {
     // Match "prefixABC" directly instead of using lookahead
     let results = search_files("prefixABC", directory, &options)?;
 
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
 
     // Should find "prefixABC" but not "prefixDEF"
     let matches: Vec<_> = results
-        .iter()
+        .lines.iter()
         .filter(|r| r.line_content.contains("prefixABC"))
         .collect();
 
@@ -252,11 +252,11 @@ fn test_search_alternate_word_pattern() -> Result<()> {
     // Match "prefixDEF" directly
     let results = search_files("prefixDEF", directory, &options)?;
 
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
 
     // Should find "prefixDEF" but not "prefixABC"
     let matches: Vec<_> = results
-        .iter()
+        .lines.iter()
         .filter(|r| r.line_content.contains("prefixDEF"))
         .collect();
 
@@ -273,12 +273,12 @@ fn test_search_with_non_greedy_matching() -> Result<()> {
     // Match everything between two words with a non-greedy pattern
     let results = search_files("Basic.*?banana", directory, &options)?;
 
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
 
     // Should find the full line with "Basic text: apple orange banana"
     assert!(
         results
-            .iter()
+            .lines.iter()
             .any(|r| r.line_content.contains("Basic text: apple orange banana"))
     );
 
@@ -293,10 +293,10 @@ fn test_search_with_number_ranges() -> Result<()> {
     // Match numbers between 100 and 199
     let results = search_files("\\b1[0-9]{2}\\b", directory, &options)?;
 
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
 
     // Should find "123" but not "456" or "789"
-    assert!(results.iter().any(|r| r.line_content.contains("123")));
+    assert!(results.lines.iter().any(|r| r.line_content.contains("123")));
 
     Ok(())
 }
@@ -309,12 +309,12 @@ fn test_search_with_capture_groups() -> Result<()> {
     // Pattern to match content inside parentheses
     let results = search_files("\\([^)]*\\)", directory, &options)?;
 
-    assert!(!results.is_empty());
+    assert!(!results.lines.is_empty());
 
     // Should find both "(group1)" and "(inner)" and "(123)"
-    assert!(results.iter().any(|r| r.line_content.contains("(group1)")));
-    assert!(results.iter().any(|r| r.line_content.contains("(inner)")));
-    assert!(results.iter().any(|r| r.line_content.contains("(123)")));
+    assert!(results.lines.iter().any(|r| r.line_content.contains("(group1)")));
+    assert!(results.lines.iter().any(|r| r.line_content.contains("(inner)")));
+    assert!(results.lines.iter().any(|r| r.line_content.contains("(123)")));
 
     Ok(())
 }
