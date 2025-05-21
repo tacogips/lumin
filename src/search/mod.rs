@@ -305,7 +305,7 @@ impl Default for SearchOptions {
 /// }
 /// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SearchResult {
+pub struct SearchResultLine {
     /// Path to the file containing the match.
     ///
     /// This is the absolute or relative path to the file where the match was found,
@@ -440,7 +440,7 @@ pub struct SearchResult {
 ///
 /// # Returns
 ///
-/// A vector of `SearchResult` objects, each containing:
+/// A vector of `SearchResultLine` objects, each containing:
 /// - The path to the file with a match
 /// - The line number where the match was found (1-based)
 /// - The full content of the line containing the match
@@ -946,7 +946,7 @@ pub fn search_files(
     pattern: &str,
     directory: &Path,
     options: &SearchOptions,
-) -> Result<Vec<SearchResult>> {
+) -> Result<Vec<SearchResultLine>> {
     // Create the matcher with the appropriate case sensitivity
     let matcher = if options.case_sensitive {
         RegexMatcher::new(pattern)
@@ -1033,7 +1033,7 @@ pub fn search_files(
         for (line_number, content, is_context) in matches {
             // For context lines, we don't need to apply omission logic
             if is_context {
-                results.push(SearchResult {
+                results.push(SearchResultLine {
                     file_path: file_path.clone(),
                     line_number,
                     line_content: content,
@@ -1184,7 +1184,7 @@ pub fn search_files(
                 content
             };
     
-            results.push(SearchResult {
+            results.push(SearchResultLine {
                 file_path: file_path.clone(),
                 line_number,
                 line_content,
