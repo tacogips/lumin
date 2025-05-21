@@ -15,6 +15,9 @@ pub struct TreeOptions {
 
     /// Whether to respect .gitignore files when determining which files to include
     pub respect_gitignore: bool,
+    
+    /// Maximum depth of directory traversal (number of directory levels to explore)
+    pub depth: Option<usize>,
 }
 
 impl Default for TreeOptions {
@@ -22,6 +25,7 @@ impl Default for TreeOptions {
         Self {
             case_sensitive: false,
             respect_gitignore: true,
+            depth: Some(20),
         }
     }
 }
@@ -63,7 +67,7 @@ pub struct DirectoryTree {
 /// Returns an error if there's an issue accessing the directory or files
 pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<DirectoryTree>> {
     // Use the common builder setup from traverse module
-    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive)?;
+    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive, options.depth)?;
 
     // Map to organize entries by directory
     let mut dirs_map: HashMap<String, Vec<Entry>> = HashMap::new();

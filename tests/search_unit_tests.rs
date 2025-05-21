@@ -11,6 +11,7 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -58,6 +59,7 @@ fn test_search_pattern_case_insensitive() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -93,6 +95,7 @@ fn test_search_with_gitignore_respect() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -130,6 +133,7 @@ fn test_search_without_gitignore_respect() -> Result<()> {
         respect_gitignore: false,
         exclude_glob: None,
         match_content_omit_num: None,
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };

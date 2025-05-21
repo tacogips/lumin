@@ -35,6 +35,10 @@ enum Commands {
         #[arg(long)]
         no_ignore: bool,
 
+        /// Maximum directory traversal depth (0 for unlimited)
+        #[arg(long = "max-depth", default_value = "20")]
+        max_depth: usize,
+
         /// Limit context around matches (number of characters before and after)
         /// While context is limited, the full matched pattern is always preserved
         #[arg(long)]
@@ -68,6 +72,10 @@ enum Commands {
         /// Include binary files
         #[arg(long)]
         include_binary: bool,
+
+        /// Maximum directory traversal depth (0 for unlimited)
+        #[arg(long = "max-depth", default_value = "20")]
+        max_depth: usize,
     },
 
     /// Display directory structure as a tree
@@ -82,6 +90,10 @@ enum Commands {
         /// Ignore gitignore files
         #[arg(long)]
         no_ignore: bool,
+
+        /// Maximum directory traversal depth (0 for unlimited)
+        #[arg(long = "max-depth", default_value = "20")]
+        max_depth: usize,
     },
 
     /// View file contents
@@ -117,12 +129,14 @@ fn main() -> Result<()> {
             omit_context,
             before_context,
             after_context,
+            max_depth,
         } => {
             let options = SearchOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
                 match_content_omit_num: *omit_context,
+                depth: if *max_depth == 0 { None } else { Some(*max_depth) },
                 before_context: *before_context,
                 after_context: *after_context,
             };
@@ -179,12 +193,14 @@ fn main() -> Result<()> {
             case_sensitive,
             no_ignore,
             include_binary,
+            max_depth,
         } => {
             let options = TraverseOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 only_text_files: !include_binary,
                 pattern: pattern.clone(),
+                depth: if *max_depth == 0 { None } else { Some(*max_depth) },
             };
 
             let results = traverse_directory(directory, &options)?;
@@ -209,10 +225,12 @@ fn main() -> Result<()> {
             directory,
             case_sensitive,
             no_ignore,
+            max_depth,
         } => {
             let options = TreeOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
+                depth: if *max_depth == 0 { None } else { Some(*max_depth) },
             };
 
             let results = generate_tree(directory, &options)?;

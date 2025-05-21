@@ -133,6 +133,7 @@ use common::{build_walk, is_hidden_path};
 ///     respect_gitignore: true,
 ///     only_text_files: false,
 ///     pattern: Some("**/*.{rs,toml}".to_string()),
+///     depth: Some(10),
 /// };
 ///
 /// // Case-insensitive, include all files, with a substring pattern
@@ -141,6 +142,7 @@ use common::{build_walk, is_hidden_path};
 ///     respect_gitignore: false,
 ///     only_text_files: false,
 ///     pattern: Some("config".to_string()),
+///     depth: None,
 /// };
 /// ```
 #[derive(Debug, Clone)]
@@ -279,6 +281,20 @@ pub struct TraverseOptions {
     /// - `v1` - Any file with "v1" in its path (useful for versioned files)
     /// - `backup` - Any file with "backup" in its path
     pub pattern: Option<String>,
+
+    /// Maximum depth of directory traversal (number of directory levels to explore).
+    ///
+    /// When `Some(depth)`, the traversal will only explore up to the specified number of directory levels.
+    /// When `None`, the traversal will explore directories to their full depth.
+    /// Default is `Some(20)` to prevent excessive traversal of deeply nested directories.
+    ///
+    /// # Examples
+    ///
+    /// - With `depth: Some(1)`, only files in the immediate directory will be included (no subdirectories)
+    /// - With `depth: Some(2)`, files in the immediate directory and one level of subdirectories will be included
+    /// - With `depth: Some(5)`, the traversal will go up to 5 levels deep
+    /// - With `depth: None`, all subdirectories will be explored regardless of depth
+    pub depth: Option<usize>,
 }
 
 impl Default for TraverseOptions {
@@ -288,6 +304,7 @@ impl Default for TraverseOptions {
             respect_gitignore: true,
             only_text_files: true,
             pattern: None,
+            depth: Some(20),
         }
     }
 }
@@ -384,6 +401,7 @@ impl TraverseResult {
 ///   - `respect_gitignore`: Controls whether .gitignore rules are applied
 ///   - `only_text_files`: Controls whether binary files are excluded
 ///   - `pattern`: Optional glob or substring pattern for filtering files
+///   - `depth`: Optional maximum directory traversal depth (default: 20)
 ///
 /// # Returns
 ///
@@ -505,6 +523,39 @@ impl TraverseResult {
 ///     }
 /// ).unwrap();
 /// ```
+/// 
+/// ### Controlling Directory Traversal Depth
+/// ```no_run
+/// use lumin::traverse::{TraverseOptions, traverse_directory};
+/// use std::path::Path;
+///
+/// // Find all files in the current directory only (no subdirectories)
+/// let top_level_files = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         depth: Some(1),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+///
+/// // Find all files up to 5 levels deep
+/// let limited_depth_files = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         depth: Some(5),
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+///
+/// // Find all files with unlimited depth
+/// let all_files = traverse_directory(
+///     Path::new("."),
+///     &TraverseOptions {
+///         depth: None,
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
+/// ```
 ///
 /// ## Using Substring Patterns
 /// ```no_run
@@ -548,7 +599,7 @@ pub fn traverse_directory(
     let infer = Infer::new();
 
     // Use the common walker builder
-    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive)?;
+    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive, options.depth)?;
 
     // Set up pattern matching if pattern provided
     let pattern_matcher = if let Some(pattern) = &options.pattern {

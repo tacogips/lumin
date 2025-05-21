@@ -89,6 +89,7 @@ use crate::traverse::common;
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     depth: Some(20),
 ///     before_context: 0, // No lines before matches
 ///     after_context: 0, // Only show matching lines, no context
 /// };
@@ -99,6 +100,7 @@ use crate::traverse::common;
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches (full matches always preserved)
+///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
 /// };
@@ -109,6 +111,7 @@ use crate::traverse::common;
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     depth: Some(20),
 ///     before_context: 3, // Show 3 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
 /// };
@@ -178,6 +181,20 @@ pub struct SearchOptions {
     /// - `match_content_omit_num: None` will retain the complete line content without truncation
     pub match_content_omit_num: Option<usize>,
 
+    /// Maximum depth of directory traversal (number of directory levels to explore).
+    ///
+    /// When `Some(depth)`, the search will only explore up to the specified number of directory levels.
+    /// When `None`, the search will explore directories to their full depth.
+    /// Default is `Some(20)` to prevent excessive traversal of deeply nested directories.
+    ///
+    /// # Examples
+    ///
+    /// - With `depth: Some(1)`, only files in the immediate directory will be searched (no subdirectories)
+    /// - With `depth: Some(2)`, files in the immediate directory and one level of subdirectories will be searched
+    /// - With `depth: Some(5)`, the search will go up to 5 levels deep
+    /// - With `depth: None`, all subdirectories will be explored regardless of depth
+    pub depth: Option<usize>,
+
     /// Number of lines to display before each match (similar to grep's -B option).
     ///
     /// When set to a value greater than 0, this many lines before each match will be included
@@ -218,6 +235,7 @@ impl Default for SearchOptions {
             respect_gitignore: true,
             exclude_glob: None,
             match_content_omit_num: None,
+            depth: Some(20),
             before_context: 0,
             after_context: 0,
         }
@@ -428,6 +446,7 @@ pub struct SearchResult {
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 0,
 /// };
@@ -451,6 +470,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
 ///     match_content_omit_num: Some(50), // Limit context to 50 chars before and after each match (preserving full matches)
+///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 5, // Show 5 lines after each match
 /// };
@@ -477,6 +497,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(20), // Only show 20 characters around matches while preserving entire matches
+///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 3, // Show 3 lines of context after each match
 /// };
@@ -759,6 +780,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
 ///     match_content_omit_num: None,
+///     depth: Some(20),
 ///     before_context: 0,
 ///     after_context: 0,
 /// };
@@ -798,6 +820,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(30), // Show only 30 characters before and after matches
+///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
 /// };
@@ -1106,6 +1129,7 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
         directory,
         options.respect_gitignore,
         options.case_sensitive,
+        options.depth,
         options.exclude_glob.as_ref(),
         Vec::new(), // Start with an empty vector
         |mut files, path| {

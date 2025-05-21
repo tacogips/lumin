@@ -18,6 +18,7 @@ fn test_full_workflow() -> Result<()> {
         respect_gitignore: true,
         only_text_files: true,
         pattern: Some("**.txt".to_string()),
+        depth: Some(20),
     };
 
     let traverse_results = traverse_directory(directory, &traverse_options)?;
@@ -30,6 +31,7 @@ fn test_full_workflow() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -41,6 +43,7 @@ fn test_full_workflow() -> Result<()> {
     let tree_options = TreeOptions {
         case_sensitive: false,
         respect_gitignore: true,
+        depth: Some(20),
     };
 
     let tree_results = generate_tree(directory, &tree_options)?;

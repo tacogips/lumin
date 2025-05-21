@@ -16,6 +16,7 @@ use crate::telemetry::{LogMessage, log_with_context};
 /// * `directory` - The directory path to traverse
 /// * `respect_gitignore` - Whether to respect gitignore rules
 /// * `case_sensitive` - Whether file path matching should be case sensitive
+/// * `max_depth` - Optional maximum directory depth to traverse
 ///
 /// # Returns
 ///
@@ -28,6 +29,7 @@ pub fn build_walk(
     directory: &Path,
     respect_gitignore: bool,
     case_sensitive: bool,
+    max_depth: Option<usize>,
 ) -> Result<ignore::Walk> {
     // Configure the file traversal
     let mut builder = WalkBuilder::new(directory);
@@ -36,6 +38,10 @@ pub fn build_walk(
     builder.hidden(respect_gitignore);
     if !case_sensitive {
         builder.ignore_case_insensitive(true);
+    }
+    // Apply max depth if specified
+    if let Some(depth) = max_depth {
+        builder.max_depth(Some(depth));
     }
     // Additional settings to ensure we fully respect/ignore gitignore as needed
     if !respect_gitignore {
@@ -88,6 +94,7 @@ pub fn is_hidden_path(path: &Path) -> bool {
 /// * `directory` - The directory path to traverse
 /// * `respect_gitignore` - Whether to respect gitignore rules
 /// * `case_sensitive` - Whether file path matching should be case sensitive
+/// * `max_depth` - Optional maximum directory depth to traverse
 /// * `exclude_glob` - Optional list of glob patterns to exclude files from the results
 /// * `initial` - The initial value for the result accumulator
 /// * `callback` - A function that processes each entry and updates the accumulator. This function
@@ -116,6 +123,7 @@ pub fn is_hidden_path(path: &Path) -> bool {
 ///         dir,
 ///         true,   // respect_gitignore
 ///         false,  // case_sensitive
+///         Some(20), // max_depth
 ///         None,   // exclude_glob
 ///         Vec::new(),
 ///         |mut names, path| {
@@ -141,6 +149,7 @@ pub fn is_hidden_path(path: &Path) -> bool {
 ///         dir,
 ///         true,   // respect_gitignore
 ///         false,  // case_sensitive
+///         None,   // max_depth (no limit)
 ///         Some(&vec!["*.bin".to_string(), "*.jpg".to_string()]),
 ///         0,
 ///         |count, path| {
@@ -157,6 +166,7 @@ pub fn traverse_with_callback<T, F>(
     directory: &Path,
     respect_gitignore: bool,
     case_sensitive: bool,
+    max_depth: Option<usize>,
     exclude_glob: Option<&Vec<String>>,
     initial: T,
     mut callback: F,
@@ -165,7 +175,7 @@ where
     F: FnMut(T, &Path) -> Result<T>,
 {
     // Use the common walker builder
-    let mut walker = build_walk(directory, respect_gitignore, case_sensitive)?;
+    let mut walker = build_walk(directory, respect_gitignore, case_sensitive, max_depth)?;
 
     // Compile exclude glob patterns if provided
     let glob_set = if let Some(exclude_patterns) = exclude_glob {
@@ -243,6 +253,7 @@ where
 /// * `directory` - The directory path to collect files from
 /// * `respect_gitignore` - Whether to respect gitignore rules
 /// * `case_sensitive` - Whether file path matching should be case sensitive
+/// * `max_depth` - Optional maximum directory depth to traverse
 /// * `exclude_glob` - Optional list of glob patterns to exclude files from the results
 ///
 /// # Returns
@@ -263,8 +274,8 @@ where
 /// use std::path::Path;
 ///
 /// fn find_files(dir: &Path) -> Result<Vec<std::path::PathBuf>> {
-///     // Find all files, respecting gitignore, case-insensitive
-///     collect_files_with_excludes(dir, true, false, None)
+///     // Find all files, respecting gitignore, case-insensitive, with default depth
+///     collect_files_with_excludes(dir, true, false, Some(20), None)
 /// }
 /// ```
 ///
@@ -275,26 +286,28 @@ where
 /// use std::path::Path;
 ///
 /// fn find_source_files(dir: &Path) -> Result<Vec<std::path::PathBuf>> {
-///     // Find all files except build outputs and test files
+///     // Find all files except build outputs and test files, limit to 5 levels deep
 ///     let excludes = vec![
 ///         "**/target/**".to_string(),
 ///         "**/*.test.*".to_string(),
 ///         "**/*_test.*".to_string(),
 ///     ];
 ///     
-///     collect_files_with_excludes(dir, true, false, Some(&excludes))
+///     collect_files_with_excludes(dir, true, false, Some(5), Some(&excludes))
 /// }
 /// ```
 pub fn collect_files_with_excludes(
     directory: &Path,
     respect_gitignore: bool,
     case_sensitive: bool,
+    max_depth: Option<usize>,
     exclude_glob: Option<&Vec<String>>,
 ) -> Result<Vec<PathBuf>> {
     traverse_with_callback(
         directory,
         respect_gitignore,
         case_sensitive,
+        max_depth,
         exclude_glob,
         Vec::new(),
         |mut files, path| {

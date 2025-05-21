@@ -22,6 +22,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -39,6 +40,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: Some(5),
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -68,6 +70,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: Some(20),
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
@@ -100,6 +103,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: Some(3), // Only 3 chars, much smaller than "VERYLONGPATTERNSTRING"
+        depth: Some(20),
         before_context: 0,
         after_context: 0,
     };
