@@ -87,11 +87,17 @@ This library provides functionality for searching and displaying local files.
 
 ### File Viewing
 
-A function is defined to display file contents when given a file path.
+A function is defined to display file contents when given a file path, with support for line-based filtering.
 
 The view_file function returns a structured FileView with type-safe content representation:
 
 ```rust
+pub struct ViewOptions {
+    pub max_size: Option<usize>,
+    pub line_from: Option<usize>,
+    pub line_to: Option<usize>,
+}
+
 pub struct FileView {
     pub file_path: PathBuf,
     pub file_type: String,
@@ -100,27 +106,35 @@ pub struct FileView {
 
 // Content is represented as an enum with different variants
 pub enum FileContents {
-    Text { content: String, metadata: TextMetadata },
+    Text { content: TextContent, metadata: TextMetadata },
     Binary { message: String, metadata: BinaryMetadata },
     Image { message: String, metadata: ImageMetadata },
 }
+
+pub struct TextContent {
+    pub line_contents: Vec<LineContent>,
+}
+
+pub struct LineContent {
+    pub line_number: usize,
+    pub line: String,
+}
 ```
 
-When serialized to JSON, the output looks like:
+Features:
+- File type detection for text, binary, and image files
+- Size limiting to avoid loading very large files
+- Line-based filtering to view specific portions of text files
+- Graceful handling of out-of-range line specifications
 
-```json
-{
-  "file_path": "path/to/file",
-  "file_type": "text/plain",
-  "contents": {
-    "type": "text",
-    "content": "file contents...",
-    "metadata": {
-      "line_count": 42,
-      "char_count": 1234
-    }
-  }
-}
+The command line output format is:
+```
+filepath:line_number:content
+```
+
+For binary files, the output is simplified to show file type information:
+```
+filepath: Binary file detected, size: X bytes, type: Y
 ```
 
 ## Common Features Across Modules
