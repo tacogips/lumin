@@ -17,13 +17,12 @@ pub struct ViewOptions {
     /// A value of None means no limit.
     pub max_size: Option<usize>,
 
-    // the response contains line contents from(and including) this line number
-    // line count
-    // only applied if it's a text file
+    /// Starting line number to include in text file content (1-based, inclusive).
+    /// Only applied for text files. If None, starts from the first line.
     pub line_from: Option<usize>,
 
-    // the response contains line contents until(and including) this line number
-    // only applied if it's a text file
+    /// Ending line number to include in text file content (1-based, inclusive).
+    /// Only applied for text files. If None, includes until the last line.
     pub line_to: Option<usize>,
 }
 
@@ -74,18 +73,49 @@ pub enum FileContents {
     },
 }
 
-/// Metadata for text files.
+/// Text content with line-by-line structure.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TextContent {
+    /// Collection of individual lines with their content
     pub line_contents: Vec<LineContent>,
 }
 
-/// Metadata for text files.
+impl TextContent {
+    /// Check if the content contains the given string
+    pub fn contains(&self, s: &str) -> bool {
+        self.line_contents.iter().any(|line| line.line.contains(s))
+    }
+    
+    /// Check if the content is empty
+    pub fn is_empty(&self) -> bool {
+        self.line_contents.is_empty()
+    }
+    
+    /// Convert the content to lowercase
+    pub fn to_lowercase(&self) -> String {
+        self.line_contents
+            .iter()
+            .map(|line| line.line.to_lowercase())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+    
+    /// Convert the content to a string
+    pub fn to_string(&self) -> String {
+        self.line_contents
+            .iter()
+            .map(|line| line.line.clone())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+/// Represents a single line in a text file.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LineContent {
-    /// Number of lines in the text file
-    pub line_count: usize,
-    /// Number of characters in the text file
+    /// Line number (1-based index)
+    pub line_number: usize,
+    /// The content of the line
     pub line: String,
 }
 
@@ -132,15 +162,20 @@ pub struct FileView {
 }
 
 /// Reads and processes a file, detecting its type and returning an appropriate representation.
+/// For text files, can optionally filter to include only specific line ranges.
 ///
 /// # Arguments
 ///
 /// * `path` - Path to the file to view
-/// * `options` - Configuration options for the viewing operation
+/// * `options` - Configuration options for the viewing operation, including:
+///   - `max_size`: Optional maximum file size limit
+///   - `line_from`: Optional starting line number (1-based, inclusive)
+///   - `line_to`: Optional ending line number (1-based, inclusive)
 ///
 /// # Returns
 ///
-/// A FileView struct containing the file path, detected type, and contents with metadata
+/// A FileView struct containing the file path, detected type, and contents with metadata.
+/// For text files, the content is structured as a collection of lines with line numbers.
 ///
 /// # Errors
 ///
@@ -149,6 +184,7 @@ pub struct FileView {
 /// - The file is larger than the maximum size specified in options
 /// - Failed to read file metadata or content
 /// - Failed to determine the file type
+/// - Specified line range is invalid (e.g., start > end or start > total lines)
 pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
     // Check if file exists and is a file
     if !path.exists() {
@@ -243,12 +279,39 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
         match String::from_utf8(content.clone()) {
             Ok(text) => {
                 // Count lines for information
-                let line_count = text.lines().count();
+                let all_lines: Vec<&str> = text.lines().collect();
+                let line_count = all_lines.len();
                 let char_count = text.chars().count();
+
+                // Apply line filtering if requested, silently adjusting for boundaries
+                let from_line = options.line_from.unwrap_or(1).max(1);
+                let to_line = options.line_to.unwrap_or(line_count).min(line_count);
+                
+                // If from_line is beyond file content or greater than to_line, adjust silently
+                let (effective_from, effective_to) = if from_line > line_count || from_line > to_line {
+                    // If range is completely invalid, return empty content
+                    (1, 0) // This will create an empty collection as from > to
+                } else {
+                    (from_line, to_line)
+                };
+
+                // Create line contents with line numbers and filtered text
+                let line_contents = all_lines
+                    .iter()
+                    .enumerate()
+                    .filter(|(idx, _)| {
+                        let line_num = idx + 1; // Convert to 1-based index
+                        line_num >= effective_from && line_num <= effective_to
+                    })
+                    .map(|(idx, line)| LineContent {
+                        line_number: idx + 1, // Convert to 1-based index
+                        line: line.to_string(),
+                    })
+                    .collect();
 
                 // Create structured text content
                 FileContents::Text {
-                    content: text,
+                    content: TextContent { line_contents },
                     metadata: TextMetadata {
                         line_count,
                         char_count,

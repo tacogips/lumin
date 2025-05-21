@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use lumin::search::{SearchOptions, search_files};
 use lumin::traverse::{TraverseOptions, traverse_directory};
 use lumin::tree::{TreeOptions, generate_tree};
-use lumin::view::{ViewOptions, view_file};
+use lumin::view::{FileContents, ViewOptions, view_file};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -92,6 +92,14 @@ enum Commands {
         /// Maximum file size in bytes
         #[arg(long)]
         max_size: Option<usize>,
+        
+        /// Start viewing from this line number (1-based, inclusive)
+        #[arg(long)]
+        line_from: Option<usize>,
+        
+        /// End viewing at this line number (1-based, inclusive)
+        #[arg(long)]
+        line_to: Option<usize>,
     },
 }
 
@@ -217,13 +225,30 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::View { file, max_size } => {
+        Commands::View { file, max_size, line_from, line_to } => {
             let options = ViewOptions {
                 max_size: *max_size,
+                line_from: *line_from,
+                line_to: *line_to,
             };
 
-            let json_output = view_file(file, &options)?;
-            println!("{}", serde_json::to_string_pretty(&json_output)?);
+            let view_result = view_file(file, &options)?;
+            
+            // Format output as {filepath}:{line_num}:{line_contents}
+            match view_result.contents {
+                FileContents::Text { content, .. } => {
+                    let file_path = view_result.file_path.to_string_lossy();
+                    for line_content in content.line_contents {
+                        println!("{file_path}:{}:{}", line_content.line_number, line_content.line);
+                    }
+                },
+                FileContents::Binary { message, .. } => {
+                    println!("{}: {}", view_result.file_path.to_string_lossy(), message);
+                },
+                FileContents::Image { message, .. } => {
+                    println!("{}: {}", view_result.file_path.to_string_lossy(), message);
+                },
+            }
         }
     }
 

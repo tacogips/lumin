@@ -104,6 +104,8 @@ fn test_view_with_size_limit() -> Result<()> {
     let file_path = Path::new("tests/fixtures/text_files/sample.txt");
     let options = ViewOptions {
         max_size: Some(tiny_limit),
+        line_from: None,
+        line_to: None,
     };
 
     // Should fail because file is larger than the limit
@@ -181,5 +183,108 @@ fn test_view_toml_config_file() -> Result<()> {
         _ => panic!("Expected text content for toml file"),
     }
 
+    Ok(())
+}
+
+#[test]
+fn test_view_with_line_filtering() -> Result<()> {
+    let file_path = Path::new("tests/fixtures/text_files/sample.txt");
+    
+    // Create test options with line filtering
+    let options = ViewOptions {
+        max_size: None,
+        line_from: Some(2),  // Start from line 2
+        line_to: Some(4),    // End at line 4
+    };
+    
+    // View the file
+    let view_result = view_file(file_path, &options)?;
+    
+    // Check the filtered content
+    match &view_result.contents {
+        FileContents::Text { content, metadata } => {
+            // Check that we only got lines 2-4
+            assert_eq!(content.line_contents.len(), 3);
+            assert_eq!(content.line_contents[0].line_number, 2);
+            assert_eq!(content.line_contents[2].line_number, 4);
+            
+            // Check metadata (should still show total count for the file)
+            assert!(metadata.line_count > 3); // Total line count should be more than our filtered range
+        }
+        _ => panic!("Expected text content")
+    }
+    
+    Ok(())
+}
+
+#[test]
+fn test_view_with_out_of_range_line_filtering() -> Result<()> {
+    let file_path = Path::new("tests/fixtures/text_files/sample.txt");
+    
+    // Test with line range completely beyond the file's content
+    // The file has 6 lines, requesting lines 100-200
+    let options = ViewOptions {
+        max_size: None,
+        line_from: Some(100),
+        line_to: Some(200),
+    };
+    
+    // Should not error, just return empty content
+    let view_result = view_file(file_path, &options)?;
+    
+    match &view_result.contents {
+        FileContents::Text { content, metadata } => {
+            // Content should be empty as requested lines are out of range
+            assert!(content.line_contents.is_empty());
+            
+            // Metadata should still reflect the actual file
+            assert_eq!(metadata.line_count, 6);
+        }
+        _ => panic!("Expected text content")
+    }
+    
+    // Test with partial range overlap
+    // Requesting lines 5-10 but file only has 6 lines
+    let options = ViewOptions {
+        max_size: None,
+        line_from: Some(5),
+        line_to: Some(10),
+    };
+    
+    let view_result = view_file(file_path, &options)?;
+    
+    match &view_result.contents {
+        FileContents::Text { content, metadata } => {
+            // Should get lines 5-6 only
+            assert_eq!(content.line_contents.len(), 2);
+            assert_eq!(content.line_contents[0].line_number, 5);
+            assert_eq!(content.line_contents[1].line_number, 6);
+            
+            // Metadata still reflects the whole file
+            assert_eq!(metadata.line_count, 6);
+        }
+        _ => panic!("Expected text content")
+    }
+    
+    // Test with inverted range (from > to)
+    let options = ViewOptions {
+        max_size: None,
+        line_from: Some(4),
+        line_to: Some(2),
+    };
+    
+    let view_result = view_file(file_path, &options)?;
+    
+    match &view_result.contents {
+        FileContents::Text { content, metadata } => {
+            // Content should be empty due to invalid range
+            assert!(content.line_contents.is_empty());
+            
+            // Metadata still reflects the whole file
+            assert_eq!(metadata.line_count, 6);
+        }
+        _ => panic!("Expected text content")
+    }
+    
     Ok(())
 }

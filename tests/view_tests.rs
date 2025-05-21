@@ -107,6 +107,8 @@ mod view_tests {
         let file_path = Path::new(TEST_DIR).join("images").join("sample.jpg"); // 5KB file
         let options = ViewOptions {
             max_size: Some(1024), // 1KB limit
+            line_from: None,
+            line_to: None,
         };
 
         // Should return an error due to size limit
