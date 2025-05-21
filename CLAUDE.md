@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Rule of the Responses
+
+You (the LLM model) must always begin your first response in a conversation with "I will continue thinking and providing output in English."
+
+You (the LLM model) must acknowledge that you have read CLAUDE.md and will comply with its contents in your first response.
+
 ## Project Documentation
 
 When working with this codebase, refer to the following key documents:
@@ -41,6 +47,7 @@ CARGO_TERM_QUIET=true NEXTEST_STATUS_LEVEL=fail NEXTEST_FAILURE_OUTPUT=immediate
 ```
 
 These environment variables do the following:
+
 - `CARGO_TERM_QUIET=true`: Suppresses Cargo's own progress output
 - `NEXTEST_STATUS_LEVEL=fail`: Only show status output for failed tests
 - `NEXTEST_FAILURE_OUTPUT=immediate_final`: Shows failed test output both immediately and in the final summary
@@ -59,6 +66,7 @@ These environment variables do the following:
 - Use Rust's ownership system effectively (avoid unnecessary clones)
 - Actively use cargo-docs (mcp) to investigate crate usage patterns
 - Organize module and import declarations in the following order, with each block separated by a blank line:
+
   1. `pub mod` declarations (no line breaks within this block)
   2. `mod` declarations (no line breaks within this block)
   3. `pub use` declarations (no line breaks within this block)
@@ -262,6 +270,7 @@ When making significant changes to the codebase:
 8. **Document your changes in spec.md**
 
 Remember that documentation is part of the codebase and should be held to the same quality standards as the code itself. When updating documentation:
+
 - Ensure Rustdoc comments compile without warnings
 - Make sure examples in documentation are correct and up-to-date
 - Keep code and documentation in sync
@@ -311,27 +320,32 @@ IMPORTANT: Always update devlog.md after making significant changes to the codeb
 The primary purpose of devlog.md is to guide future LLM models in code generation by documenting key design patterns and architectural decisions. When asked to make the devlog more compact or to optimize it:
 
 1. **Remove timestamps and dates**:
+
    - Dates are not relevant for code generation patterns
    - Section headers should focus on the change content, not when it happened
    - Use pattern-oriented section names (e.g., "Type System Improvements" instead of "2024-05-12: Type System Improvements")
 
 2. **Prioritize design patterns over implementation details**:
+
    - Emphasize reusable patterns that can guide future code generation
    - Include code examples that demonstrate the pattern
    - Explain the rationale behind architectural decisions
    - Show the proper way to implement similar patterns in future code
 
 3. **Organize by pattern categories**:
+
    - Group related changes under architectural themes (e.g., "Type System Improvements", "Error Handling Patterns")
    - Use clear, descriptive section headers that identify the pattern category
    - Sort by importance and reusability rather than chronologically
 
 4. **Include application guidance**:
+
    - For each pattern, explain when and where to apply it
    - Note any constraints or conditions for using the pattern
    - Mention potential future extensions of the pattern
 
 5. **Omit trivial changes and fixes**:
+
    - Focus only on significant architectural and design decisions
    - Skip minor refactorings, typo fixes, and routine maintenance
    - Consolidate similar small changes into pattern-level descriptions
