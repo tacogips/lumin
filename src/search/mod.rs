@@ -1,8 +1,10 @@
 //! File content searching functionality using regex patterns.
 //!
 //! This module provides tools to search for text patterns in files
-//! within a specified directory, with options for case sensitivity
-//! and gitignore handling.
+//! within a specified directory, with options for case sensitivity,
+//! gitignore handling, and context control. The search functionality
+//! supports displaying context lines after matches, similar to grep's
+//! -A (after-context) option.
 //!
 //! ## Regex Pattern Syntax
 //!

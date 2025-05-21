@@ -221,6 +221,26 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### 2025-05-10: Added After-Context Feature to Search Functionality
+- Implemented after-context functionality similar to grep's -A option
+- Changes:
+  - Added `after_context` field to `SearchOptions` struct
+  - Added `is_context` field to `SearchResult` struct to differentiate matches from context lines
+  - Updated `SearcherBuilder` configuration to use grep's built-in after-context functionality
+  - Implemented a custom sink for handling both matches and context lines
+  - Added CLI option with `-A` shorthand for specifying after-context lines
+  - Added visual distinction between match lines and context lines in output
+- Benefits:
+  - Better understanding of code surrounding matches
+  - Improved usability for viewing function definitions and their implementations
+  - Compatibility with familiar grep-like behavior
+  - Clear distinction between matches and their context
+- Implementation details:
+  - Integrated with grep's native context support
+  - Preserved content omission feature when applied to match lines
+  - Context lines are displayed differently in the output (with "-" instead of ":")
+  - Added separators between non-contiguous results
+
 ### 2025-05-05: Enhanced Pattern Matching Documentation and Tests
 - Expanded documentation and tests for the traverse module's pattern matching functionality
 - Changes:
