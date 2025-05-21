@@ -318,6 +318,9 @@ This document describes the implementation of the lumin utility, focusing on des
 - Implementation details:
   - Intelligently selects pattern matching mode based on input
   - Uses `GlobBuilder` with case sensitivity for glob patterns
+  - Uses `Regex` with case insensitivity flags for substring patterns
+  - Checks for glob special characters to determine matching strategy
+  - Applied pattern matching to respect user's intent for both modes
 
 ### 2025-05-01: Added Line-Based Filtering to View Command
 - Added ability to filter file content by line number range in the view command
@@ -338,9 +341,6 @@ This document describes the implementation of the lumin utility, focusing on des
   - If a specified line range is invalid or out of bounds, returns empty or partial content instead of errors
   - Metadata still reflects entire file even when filtering is applied
   - Added comprehensive tests for line filtering behavior
-  - Uses `Regex` with case insensitivity flags for substring patterns
-  - Checks for glob special characters to determine matching strategy
-  - Applied pattern matching to respect user's intent for both modes
 
 ### 2025-04-23: Removed Binary Filtering from Tree Module
 - Simplified the tree functionality by removing binary file filtering
