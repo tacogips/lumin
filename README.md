@@ -49,11 +49,18 @@ Options:
 lumin view <FILE_PATH> [OPTIONS]
 ```
 
-The view command outputs a structured JSON with:
+Options:
+
+- `--max-size <SIZE>`: Maximum file size in bytes to read
+- `--line-from <NUM>`: Start viewing from this line number (1-based, inclusive)
+- `--line-to <NUM>`: End viewing at this line number (1-based, inclusive)
+
+The view command outputs file content with:
 
 - File path
 - File type
 - Contents (text, binary, or image with appropriate metadata)
+- For text files: total line count information
 
 ## Key Features
 
@@ -61,6 +68,7 @@ The view command outputs a structured JSON with:
 - Type detection using extension and content analysis
 - Strongly typed output structures
 - Comprehensive error handling
+- Efficient line-based filtering for text files with optimized size checking
 - Comprehensive context control for search results (before/after matches) to focus on relevant code
 
 ## Development

@@ -50,11 +50,13 @@ This document describes the implementation of the lumin utility, focusing on des
 ### View Functionality (`view/mod.rs`)
 - **Description**: Displays file contents with metadata using the `infer` crate
 - **Key components**:
-  - `ViewOptions`: Controls size limits
-  - `FileView`: Structured output with file path, type, and contents
+  - `ViewOptions`: Controls size limits and line filtering options
+  - `FileView`: Structured output with file path, type, contents, and total line count
   - `FileContents`: Enum with variants for different types of content (text, binary, image)
+  - `TextContent`: Container for line-by-line text content
+  - `LineContent`: Represents a single line with number and content
   - `TextMetadata`, `BinaryMetadata`, `ImageMetadata`: Specialized metadata structures
-  - `view_file()`: Main function for viewing files
+  - `view_file()`: Main function for viewing files with optimized size checking
 
 ### CLI Interface (`main.rs`)
 - **Description**: Command-line interface using the `clap` crate
@@ -220,6 +222,25 @@ This document describes the implementation of the lumin utility, focusing on des
   ```
 
 ## Recent Changes
+
+### 2025-05-22: Enhanced View Command with Line Count and Optimized Size Checking
+- Added total line count information for text files with a new `total_line_num` field in `FileView`
+- Optimized size checking in `view_file` for line-filtered content:
+  - Skip initial size checks when line filtering is applied
+  - Add size checks for the filtered content only
+  - Enables viewing portions of files that would normally exceed size limits
+- Changes:
+  - Added `total_line_num: Option<usize>` field to `FileView` struct (Some for text files, None for binary/image)
+  - Modified size checking logic to be more efficient with line filtering
+  - Added more precise error messages for different size check scenarios
+- Benefits:
+  - Total line count is now available for text files, making it easier to navigate through file content
+  - Clients can show line numbers relative to the total file size
+  - More efficient viewing of large files when only a small portion is needed
+  - Size limits are still enforced to prevent excessive memory usage
+- Implementation details:
+  - When line filters are applied, size checks now operate on the filtered content size
+  - Added comprehensive tests to ensure the new behavior works correctly
 
 ### 2025-05-21: Added Before-Context Feature to Search Functionality
 - Implemented before-context functionality similar to grep's -B option

@@ -102,6 +102,7 @@ pub struct FileView {
     pub file_path: PathBuf,
     pub file_type: String,
     pub contents: FileContents,
+    pub total_line_num: Option<usize>, // Total number of lines, only present for text files
 }
 
 // Content is represented as an enum with different variants
@@ -125,6 +126,8 @@ Features:
 - File type detection for text, binary, and image files
 - Size limiting to avoid loading very large files
 - Line-based filtering to view specific portions of text files
+- Optimized size checking when line filtering is used (allows viewing portions of large files)
+- Total line number information for text files via the `total_line_num` field
 - Graceful handling of out-of-range line specifications
 
 The command line output format is:
