@@ -497,6 +497,80 @@ pub struct SearchResultLine {
     pub is_context: bool,
 }
 
+/// Returns only the total number of lines that match a search pattern within files in a directory.
+///
+/// This is a convenience function that wraps `search_files` when you only need to know the
+/// total count of matches without the detailed content of each match. It's more efficient for
+/// scenarios where you only need the match count, such as determining result density or
+/// checking if any matches exist at all.
+///
+/// # Arguments
+///
+/// * `pattern` - The regular expression pattern to search for. Supports the same regex syntax
+///   as `search_files`. See the documentation of `search_files` for detailed regex examples.
+///
+/// * `directory` - The directory path to search in. All files within this directory and its
+///   subdirectories will be searched, subject to filtering by the options.
+///
+/// * `options` - Configuration options for the search operation, identical to those used by
+///   `search_files`.
+///
+/// # Returns
+///
+/// On success, returns a `Result` containing the total number of matching lines found.
+/// This count includes context lines if before_context or after_context options are set.
+///
+/// # Errors
+///
+/// Returns the same errors as `search_files`:
+/// - If the regex pattern is invalid
+/// - If there's an issue accessing the directory or files
+/// - If the search operation fails due to I/O or other system issues
+///
+/// # Examples
+///
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files_total_match_line_number};
+/// use std::path::Path;
+///
+/// let pattern = "TODO";
+/// let directory = Path::new("src");
+/// let options = SearchOptions::default();
+///
+/// match search_files_total_match_line_number(pattern, directory, &options) {
+///     Ok(count) => println!("Found {} matches for '{}'", count, pattern),
+///     Err(e) => eprintln!("Search error: {}", e),
+/// }
+/// ```
+///
+/// Using custom search options:
+///
+/// ```no_run
+/// use lumin::search::{SearchOptions, search_files_total_match_line_number};
+/// use std::path::Path;
+///
+/// let pattern = "error";
+/// let directory = Path::new("logs");
+///
+/// // Only search .log files, case-sensitive
+/// let options = SearchOptions {
+///     case_sensitive: true,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     include_glob: Some(vec!["**/*.log".to_string()]),
+///     match_content_omit_num: None,
+///     depth: Some(20),
+///     before_context: 0,
+///     after_context: 0,
+///     skip: None,
+///     take: None,
+/// };
+///
+/// let count = search_files_total_match_line_number(pattern, directory, &options)
+///     .unwrap_or(0);
+///
+/// println!("Found {} occurrences of '{}' in log files", count, pattern);
+/// ```
 pub fn search_files_total_match_line_number(
     pattern: &str,
     directory: &Path,
