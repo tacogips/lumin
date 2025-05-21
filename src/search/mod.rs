@@ -139,6 +139,7 @@ use crate::traverse::common;
 ///     take: None,
 /// };
 /// ```
+#[derive(Clone)]
 pub struct SearchOptions {
     /// Whether the search should be case sensitive.
     ///
@@ -169,12 +170,24 @@ pub struct SearchOptions {
     /// When provided, files matching any of these patterns will be excluded from the search,
     /// even if they would otherwise be included based on other criteria.
     ///
+    /// **Important**: Glob patterns are matched against paths that are relative to the search directory.
+    /// To ensure patterns work correctly with directory hierarchies, follow these guidelines:
+    /// 
+    /// 1. To exclude files in a specific subdirectory at any level, use `**/dirname/**` 
+    ///    (not just `dirname/**`)
+    /// 2. To exclude file extensions, use `**/*.ext` to exclude files with that extension anywhere
+    /// 3. For nested directories, always prefix with `**/` to match at any level
+    /// 4. For files directly in the root directory (no subdirectories), you generally need 
+    ///    to filter the search results since glob patterns don't have a direct way to 
+    ///    match only root-level files
+    ///
     /// # Examples
     ///
-    /// - `exclude_glob: Some(vec!["*.json".to_string()])` will exclude all JSON files
-    /// - `exclude_glob: Some(vec!["test/**/*.rs".to_string()])` will exclude all Rust files in any test directory
+    /// - `exclude_glob: Some(vec!["**/*.json".to_string()])` will exclude all JSON files
+    /// - `exclude_glob: Some(vec!["**/test/**/*.rs".to_string()])` will exclude all Rust files in any test directory
     /// - `exclude_glob: Some(vec!["**/node_modules/**".to_string(), "**/.git/**".to_string()])` will exclude
     ///   both node_modules and .git directories and their contents
+    /// - `exclude_glob: Some(vec!["**/target/**".to_string()])` will exclude Rust build artifacts
     /// - `exclude_glob: None` means no files will be excluded based on glob patterns
     pub exclude_glob: Option<Vec<String>>,
 
@@ -187,11 +200,23 @@ pub struct SearchOptions {
     /// Note: If both `include_glob` and `exclude_glob` are specified, a file will be included only if
     /// it matches at least one include pattern AND doesn't match any exclude pattern.
     ///
+    /// **Important**: Glob patterns are matched against paths that are relative to the search directory.
+    /// To ensure patterns work correctly with directory hierarchies, follow these guidelines:
+    /// 
+    /// 1. To match files in a specific subdirectory at any level, use `**/dirname/**` 
+    ///    (not just `dirname/**`)
+    /// 2. To match file extensions, use `**/*.ext` to match files with that extension anywhere
+    /// 3. For nested directories, always prefix with `**/` to match at any level
+    /// 4. For files directly in the root directory (no subdirectories), you generally need 
+    ///    to filter the search results since glob patterns don't have a direct way to 
+    ///    match only root-level files
+    ///
     /// # Examples
     ///
     /// - `include_glob: Some(vec!["**/*.rs".to_string()])` will only search Rust files
-    /// - `include_glob: Some(vec!["src/**".to_string()])` will only search files in the src directory and its subdirectories
+    /// - `include_glob: Some(vec!["**/src/**".to_string()])` will only search files in any src directory and its subdirectories
     /// - `include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()])` will only search Rust and TOML files
+    /// - `include_glob: Some(vec!["**/nested/**".to_string()])` will only search files in directories named "nested" at any level
     /// - `include_glob: None` means all files will be included (subject to other filtering criteria)
     pub include_glob: Option<Vec<String>>,
 
@@ -1703,3 +1728,11 @@ mod tests {
         Ok(())
     }
 }
+
+// Additional tests focused on collect_files function, particularly include_glob functionality
+#[cfg(test)]
+mod mod_tests;
+
+// Specific tests for collect_files
+#[cfg(test)]
+mod collect_files_test;
