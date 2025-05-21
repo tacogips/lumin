@@ -19,10 +19,12 @@ pub struct ViewOptions {
 
     /// Starting line number to include in text file content (1-based, inclusive).
     /// Only applied for text files. If None, starts from the first line.
+    /// If the specified line is beyond the file's content, an empty result will be returned.
     pub line_from: Option<usize>,
 
     /// Ending line number to include in text file content (1-based, inclusive).
     /// Only applied for text files. If None, includes until the last line.
+    /// If the specified line is beyond the file's content, only available lines up to the end will be included.
     pub line_to: Option<usize>,
 }
 
@@ -177,6 +179,14 @@ pub struct FileView {
 /// A FileView struct containing the file path, detected type, and contents with metadata.
 /// For text files, the content is structured as a collection of lines with line numbers.
 ///
+/// When line filtering is applied:
+/// - Only lines within the specified range (inclusive) are included
+/// - If the range is out of bounds, no error is returned:
+///   - If `line_from` is beyond the file size, an empty content list is returned
+///   - If `line_to` exceeds the file size, only available lines are included
+///   - If `line_from` > `line_to`, an empty content list is returned
+/// - Metadata still represents the whole file regardless of filtering
+///
 /// # Errors
 ///
 /// Returns an error if:
@@ -184,7 +194,6 @@ pub struct FileView {
 /// - The file is larger than the maximum size specified in options
 /// - Failed to read file metadata or content
 /// - Failed to determine the file type
-/// - Specified line range is invalid (e.g., start > end or start > total lines)
 pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
     // Check if file exists and is a file
     if !path.exists() {

@@ -318,6 +318,26 @@ This document describes the implementation of the lumin utility, focusing on des
 - Implementation details:
   - Intelligently selects pattern matching mode based on input
   - Uses `GlobBuilder` with case sensitivity for glob patterns
+
+### 2025-05-01: Added Line-Based Filtering to View Command
+- Added ability to filter file content by line number range in the view command
+- Changes:
+  - Added `line_from` and `line_to` fields to `ViewOptions` struct
+  - Created new `TextContent` and `LineContent` structs to represent line-by-line file content
+  - Modified `view_file` function to filter text content based on specified line range
+  - Changed output format from JSON to `{filepath}:{line_number}:{content}`
+  - Added helper methods to `TextContent` for compatibility with existing tests
+  - Updated CLI to accept optional line range parameters
+- Benefits:
+  - Ability to view only specific portions of text files
+  - Graceful handling of out-of-range line specifications
+  - More efficient viewing of large files by focusing on relevant sections
+  - Output format consistent with project style
+- Implementation details:
+  - Line numbers are 1-based (first line is 1)
+  - If a specified line range is invalid or out of bounds, returns empty or partial content instead of errors
+  - Metadata still reflects entire file even when filtering is applied
+  - Added comprehensive tests for line filtering behavior
   - Uses `Regex` with case insensitivity flags for substring patterns
   - Checks for glob special characters to determine matching strategy
   - Applied pattern matching to respect user's intent for both modes
