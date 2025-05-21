@@ -345,6 +345,24 @@ This change improves the user experience by providing a more predictable present
   - Organized documentation to highlight both simple and advanced use cases
   - Made tests more resilient to filesystem limitations and environment differences
 
+### 2025-05-06: Improved Glob Pattern Documentation and Tests for SearchOptions
+- Enhanced documentation and fixed tests for glob pattern matching in the search module
+- Changes:
+  - Improved documentation of the `include_glob` and `exclude_glob` options in `SearchOptions`
+  - Added detailed guidelines for constructing effective glob patterns
+  - Fixed tests to correctly use directory-level glob patterns
+  - Added edge case tests for various glob patterns and directory structures
+- Benefits:
+  - Clearer guidance for users on how to construct effective glob patterns
+  - More accurate pattern matching for nested directories
+  - Better test coverage for glob pattern matching functionality
+  - Prevention of common pattern mistakes (e.g., not prefixing with `**/`)
+- Implementation details:
+  - Added specific guidelines for matching nested directories with `**/dirname/**`
+  - Clarified how to match specific file extensions with `**/*.ext`
+  - Fixed tests to use proper glob patterns for directory hierarchies
+  - Added examples showing correct pattern usage for various scenarios
+
 ### 2025-05-05: Simplified Logging System to Use env_logger
 - Removed tracing dependencies in favor of a simpler logging solution
 - Changes:
