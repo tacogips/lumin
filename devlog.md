@@ -223,6 +223,16 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### 2025-05-23: Fixed SearchResult Pagination Support
+- Fixed the `split` method in `SearchResult` to properly extract result ranges
+- Replaced non-existent `choice` function with proper iterator-based implementation
+- Added comprehensive documentation for the method
+- Changes:
+  - Implemented proper 1-based indexing conversion for the `from` and `to` parameters
+  - Used the standard Rust iterator pattern (skip/take) for cleaner, more readable code
+  - Added safety measures to prevent panics with out-of-range indices
+  - Ensured total count is preserved while subsetting the results
+
 ### 2025-05-22: Enhanced View Command with Line Count and Optimized Size Checking
 - Added total line count information for text files with a new `total_line_num` field in `FileView`
 - Optimized size checking in `view_file` for line-filtered content:

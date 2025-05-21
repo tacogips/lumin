@@ -169,7 +169,7 @@ pub struct SearchOptions {
     ///   both node_modules and .git directories and their contents
     /// - `exclude_glob: None` means no files will be excluded based on glob patterns
     pub exclude_glob: Option<Vec<String>>,
-    
+
     /// Optional list of glob patterns for files to include in the search.
     ///
     /// When provided, only files matching at least one of these patterns will be included in the search.
@@ -197,10 +197,10 @@ pub struct SearchOptions {
     /// context as specified, which means the total line content may exceed `n*2` characters.
     ///
     /// # Behavior
-    /// 
+    ///
     /// The entire matched pattern will always be preserved, even if it's longer than `n` characters.
     /// This ensures that you can always see the complete match, which is important for context.
-    /// 
+    ///
     /// The `match_content_omit_num` parameter controls how much context outside the match is shown,
     /// not whether the match itself is truncated. For example, if `match_content_omit_num` is set to 5
     /// and the match is "verylongmatch", you will still see the entire match, plus 5 characters before
@@ -275,6 +275,49 @@ impl Default for SearchOptions {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SearchResult {
+    pub total_number: usize,
+    pub lines: Vec<SearchResultLine>,
+}
+impl SearchResult {
+    /// Extracts a subset of search result lines from a specified range.
+    ///
+    /// # Arguments
+    ///
+    /// * `from` - The starting index (1-based) to extract from, inclusive
+    /// * `to` - The ending index (1-based) to extract to, inclusive
+    ///
+    /// # Returns
+    ///
+    /// A new `SearchResult` with only the lines in the specified range.
+    /// The `total_number` field retains the original total count.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Extract the first 10 results
+    /// let first_page = search_results.split(1, 10);
+    ///
+    /// // Extract the second page of 10 results
+    /// let second_page = search_results.split(11, 20);
+    /// ```
+    pub fn split(self, from: usize, to: usize) -> Self {
+        // Convert from 1-based to 0-based indexing
+        let from_idx = from.saturating_sub(1);
+        let to_idx = to.min(self.lines.len());
+        
+        // Create a new result with the subset of lines
+        SearchResult {
+            total_number: self.total_number,
+            lines: self.lines.into_iter()
+                .skip(from_idx)
+                .take(to_idx.saturating_sub(from_idx))
+                .collect(),
+        }
+    }
+}
+
 /// Represents a single search match result.
 ///
 /// Contains information about where a match was found, including the file path,
@@ -327,7 +370,7 @@ pub struct SearchResultLine {
     /// If `match_content_omit_num` was set in the search options, this might contain
     /// only partial line content, with characters beyond the specified limit around each
     /// match omitted. Check the `content_omitted` field to determine if content was truncated.
-    /// 
+    ///
     /// Note that the entire matched pattern will always be preserved, even if
     /// `match_content_omit_num` is smaller than the match length. Only context around
     /// the match is subject to omission.
@@ -340,7 +383,7 @@ pub struct SearchResultLine {
     /// `match_content_omit_num` in the search options.
     ///
     /// When `false`, the entire original line content is preserved.
-    /// 
+    ///
     /// Note that even when content is omitted (`true`), the entire matched pattern
     /// is always fully preserved, regardless of its length compared to `match_content_omit_num`.
     /// Only the surrounding context before and after the match is affected by truncation.
@@ -350,7 +393,7 @@ pub struct SearchResultLine {
     ///
     /// When `true`, this line was included as context (either before or after a match)
     /// rather than containing a direct match to the search pattern.
-    /// 
+    ///
     /// When `false`, this line directly matches the search pattern.
     ///
     /// This is useful for displaying context lines differently or for filtering results
@@ -522,7 +565,7 @@ pub struct SearchResultLine {
 /// // limit the displayed content to 50 characters around each match,
 /// // show 2 lines before and 5 lines after each match
 /// ```
-/// 
+///
 /// Using include_glob to search only specific file types:
 /// ```no_run
 /// use lumin::search::{SearchOptions, search_files};
@@ -548,7 +591,7 @@ pub struct SearchResultLine {
 /// // Will find "dependencies" only in Rust (.rs) and TOML (.toml) files
 /// // across the entire project, respecting gitignore files
 /// ```
-/// 
+///
 /// Combining include_glob and exclude_glob for precise file targeting:
 /// ```no_run
 /// use lumin::search::{SearchOptions, search_files};
@@ -904,7 +947,7 @@ pub struct SearchResultLine {
 /// // Find all CSS color codes
 /// let css_color_pattern = r"#[a-fA-F0-9]{3,6}|rgb\(\d+,\s*\d+,\s*\d+\)";
 /// let results = search_files(css_color_pattern, Path::new("styles"), &SearchOptions::default()).unwrap();
-/// 
+///
 /// // Use content omission and context lines in large files with long lines
 /// let long_line_options = SearchOptions {
 ///     case_sensitive: false,
@@ -916,28 +959,28 @@ pub struct SearchResultLine {
 ///     before_context: 2, // Show 2 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
 /// };
-/// 
+///
 /// let long_results = search_files(
-///     r"important_pattern", 
+///     r"important_pattern",
 ///     Path::new("logs"),
 ///     &long_line_options
 /// ).unwrap();
-/// 
+///
 /// // Process results, showing both matches and context lines differently
 /// for result in long_results {
 ///     if result.is_context {
 ///         // Display context lines differently
-///         println!("{}: [Context] {}", 
+///         println!("{}: [Context] {}",
 ///             result.file_path.display(),
 ///             result.line_content);
 ///     } else {
 ///         // Display actual matches with truncation indicator if needed
-///         println!("{}: [Match] {}{}", 
+///         println!("{}: [Match] {}{}",
 ///             result.file_path.display(),
 ///             result.line_content,
 ///             if result.content_omitted { " (truncated)" } else { "" });
 ///     }
-///     
+///
 ///     // The entire match pattern is always preserved completely in the line_content,
 ///     // even when content_omitted is true and other parts of the line are truncated
 /// }
@@ -988,13 +1031,13 @@ pub fn search_files(
 
         // Create a sink that collects the results
         let mut matches = Vec::new();
-        
+
         // Define a custom sink to handle both matches and context lines
         struct MatchCollector<'a> {
             // We don't need to store the matcher reference in this implementation
             matches: &'a mut Vec<(u64, String, bool)>, // (line_number, content, is_context)
         }
-        
+
         impl<'a> grep::searcher::Sink for MatchCollector<'a> {
             type Error = std::io::Error;
 
@@ -1004,8 +1047,12 @@ pub fn search_files(
                 _searcher: &grep::searcher::Searcher,
                 mat: &grep::searcher::SinkMatch<'_>,
             ) -> Result<bool, Self::Error> {
-                let line = String::from_utf8_lossy(mat.bytes()).to_string().trim_end_matches('\n').to_string();
-                self.matches.push((mat.line_number().unwrap_or(0), line, false)); // Not a context line
+                let line = String::from_utf8_lossy(mat.bytes())
+                    .to_string()
+                    .trim_end_matches('\n')
+                    .to_string();
+                self.matches
+                    .push((mat.line_number().unwrap_or(0), line, false)); // Not a context line
                 Ok(true)
             }
 
@@ -1015,20 +1062,24 @@ pub fn search_files(
                 _searcher: &grep::searcher::Searcher,
                 ctx: &grep::searcher::SinkContext<'_>,
             ) -> Result<bool, Self::Error> {
-                let line = String::from_utf8_lossy(ctx.bytes()).to_string().trim_end_matches('\n').to_string();
-                self.matches.push((ctx.line_number().unwrap_or(0), line, true)); // Is a context line
+                let line = String::from_utf8_lossy(ctx.bytes())
+                    .to_string()
+                    .trim_end_matches('\n')
+                    .to_string();
+                self.matches
+                    .push((ctx.line_number().unwrap_or(0), line, true)); // Is a context line
                 Ok(true)
             }
         }
-        
+
         let collector = MatchCollector {
             matches: &mut matches,
         };
-        
+
         searcher
             .search_file(&matcher, &file, collector)
             .with_context(|| format!("Error searching file {}", file_path.display()))?;
-    
+
         // Process all matches
         for (line_number, content, is_context) in matches {
             // For context lines, we don't need to apply omission logic
@@ -1042,22 +1093,24 @@ pub fn search_files(
                 });
                 continue;
             }
-            
+
             // For actual matches, apply omission if needed
             // Calculate which parts of the content to keep and whether any was omitted
-            let (keep_ranges, content_omitted) = if let Some(omit_num) = options.match_content_omit_num {
+            let (keep_ranges, content_omitted) = if let Some(omit_num) =
+                options.match_content_omit_num
+            {
                 // Apply content omission
                 let mut keep_ranges = Vec::new();
                 let mut any_omitted = false;
-        
+
                 // Find all matches in the line
                 let mut match_positions = Vec::new();
-        
+
                 // Collect all match positions using matcher's find_iter method
                 let _ = matcher.find_iter(content.as_bytes(), |m| {
                     let start = m.start();
                     let end = m.end();
-            
+
                     // Ensure valid UTF-8 boundaries
                     let utf8_start = content[..start]
                         .char_indices()
@@ -1065,7 +1118,7 @@ pub fn search_files(
                         .filter(|&i| i <= start)
                         .last()
                         .unwrap_or(0);
-            
+
                     let utf8_end = if end < content.len() {
                         content[end..]
                             .char_indices()
@@ -1075,11 +1128,11 @@ pub fn search_files(
                     } else {
                         content.len()
                     };
-            
+
                     match_positions.push((utf8_start, utf8_end));
                     true // Continue searching
                 });
-        
+
                 // No matches found (shouldn't happen, but handle it anyway)
                 if match_positions.is_empty() {
                     (vec![(0, content.len())], false)
@@ -1094,7 +1147,7 @@ pub fn search_files(
                             } else {
                                 0
                             };
-                    
+
                             content[..match_start]
                                 .char_indices()
                                 .map(|(i, _)| i)
@@ -1103,7 +1156,7 @@ pub fn search_files(
                         } else {
                             0
                         };
-                
+
                         // Calculate context end (omit_num characters after match)
                         let context_end = if match_end < content.len() {
                             let chars_after = content[match_end..].chars().take(omit_num).count();
@@ -1115,18 +1168,18 @@ pub fn search_files(
                         } else {
                             content.len()
                         };
-                
+
                         // Add this range to our keep_ranges
                         keep_ranges.push((context_start, context_end));
                     }
-            
+
                     // Sort and merge overlapping ranges
                     if !keep_ranges.is_empty() {
                         keep_ranges.sort_by_key(|&(start, _)| start);
-                
+
                         let mut merged_ranges = Vec::new();
                         let mut current_range = keep_ranges[0];
-                
+
                         for &(start, end) in keep_ranges.iter().skip(1) {
                             if start <= current_range.1 {
                                 // Ranges overlap, merge them
@@ -1138,12 +1191,15 @@ pub fn search_files(
                             }
                         }
                         merged_ranges.push(current_range);
-                
+
                         // Check if any content would be omitted
-                        if merged_ranges.len() > 1 || merged_ranges[0].0 > 0 || merged_ranges.last().unwrap().1 < content.len() {
+                        if merged_ranges.len() > 1
+                            || merged_ranges[0].0 > 0
+                            || merged_ranges.last().unwrap().1 < content.len()
+                        {
                             any_omitted = true;
                         }
-                
+
                         (merged_ranges, any_omitted)
                     } else {
                         // Fallback (shouldn't reach here)
@@ -1154,36 +1210,37 @@ pub fn search_files(
                 // No omission requested
                 (vec![(0, content.len())], false)
             };
-    
+
             // Build the final content string using the keep ranges
             let line_content = if content_omitted {
                 let mut result = String::new();
                 let mut last_end = 0;
-        
+
                 for &(start, end) in &keep_ranges {
                     // Add omission marker if there's a gap
                     if start > last_end {
-                        if last_end > 0 { // Don't add marker if we're at the beginning
+                        if last_end > 0 {
+                            // Don't add marker if we're at the beginning
                             result.push_str("<omit>");
                         }
                     }
-            
+
                     // Add the content from this range
                     result.push_str(&content[start..end]);
                     last_end = end;
                 }
-        
+
                 // Add final omission marker if needed
                 if last_end < content.len() {
                     result.push_str("<omit>");
                 }
-        
+
                 result
             } else {
                 // No omission, use the original content
                 content
             };
-    
+
             results.push(SearchResultLine {
                 file_path: file_path.clone(),
                 line_number,
@@ -1199,8 +1256,8 @@ pub fn search_files(
 
 /// Collects a list of files within the given directory that should be included in the search.
 ///
-/// This function applies gitignore filtering, exclude_glob filtering, and include_glob filtering 
-/// based on the provided options. It uses the generic `traverse_with_callback` function to 
+/// This function applies gitignore filtering, exclude_glob filtering, and include_glob filtering
+/// based on the provided options. It uses the generic `traverse_with_callback` function to
 /// efficiently collect matching files.
 ///
 /// # Arguments
@@ -1218,7 +1275,7 @@ pub fn search_files(
 /// compiling the glob patterns
 fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
     let include_glob = options.include_glob.as_ref();
-    
+
     // Use the generic traverse function directly
     common::traverse_with_callback(
         directory,
@@ -1231,12 +1288,9 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
             // If include_glob is specified, only include files that match at least one pattern
             if let Some(include_patterns) = include_glob {
                 // Check if file matches any of the include patterns
-                let is_included = common::path_matches_any_glob(
-                    path, 
-                    include_patterns, 
-                    options.case_sensitive
-                )?;
-                
+                let is_included =
+                    common::path_matches_any_glob(path, include_patterns, options.case_sensitive)?;
+
                 // Only add the file if it matches an include pattern
                 if is_included {
                     files.push(path.to_path_buf());
@@ -1245,7 +1299,7 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
                 // No include_glob, so include all files
                 files.push(path.to_path_buf());
             }
-            
+
             Ok(files)
         },
     )
