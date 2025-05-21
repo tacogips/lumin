@@ -258,6 +258,41 @@ pub struct SearchOptions {
     /// the body of a function after matching its definition, or viewing the full error message
     /// after matching an error indicator.
     pub after_context: usize,
+    
+    /// Optional number of search result items to skip (for pagination).
+    ///
+    /// When set to `Some(n)`, the function will skip the first `n` search result items.
+    /// When combined with `take`, this enables pagination of search results.
+    /// When set to `None` (default), no results are skipped.
+    ///
+    /// # Examples
+    ///
+    /// - `skip: Some(0)` - Start from the first result (equivalent to `None`)
+    /// - `skip: Some(10)` - Skip the first 10 results, useful for showing the second page
+    /// - `skip: Some(20)` - Skip the first 20 results, useful for showing the third page if page size is 10
+    /// - `skip: None` - No results are skipped, start from the beginning
+    ///
+    /// Note that `skip` uses 0-based indexing, where `skip: Some(0)` means to start from the first result.
+    pub skip: Option<usize>,
+
+    /// Optional number of search result items to return (for pagination).
+    ///
+    /// When set to `Some(n)`, the function will return at most `n` search result items.
+    /// When combined with `skip`, this enables pagination of search results.
+    /// When set to `None` (default), all matching results are returned.
+    ///
+    /// # Examples
+    ///
+    /// - `take: Some(10)` - Return up to 10 results, useful for showing 10 items per page
+    /// - `take: Some(20)` - Return up to 20 results
+    /// - `take: Some(100)` - Return up to 100 results
+    /// - `take: None` - Return all results (no limit)
+    ///
+    /// For pagination with a page size of 10, you would use:
+    /// - Page 1: `skip: None, take: Some(10)` or `skip: Some(0), take: Some(10)`
+    /// - Page 2: `skip: Some(10), take: Some(10)` 
+    /// - Page 3: `skip: Some(20), take: Some(10)`
+    pub take: Option<usize>,
 }
 
 impl Default for SearchOptions {
@@ -271,6 +306,8 @@ impl Default for SearchOptions {
             depth: Some(20),
             before_context: 0,
             after_context: 0,
+            skip: None,
+            take: None,
         }
     }
 }
@@ -1332,6 +1369,23 @@ pub fn search_files(
     
     // Sort the results for consistent ordering
     result.sort_by_path_and_line();
+    
+    // Apply pagination if skip and take are specified
+    if options.skip.is_some() || options.take.is_some() {
+        // Calculate the 1-based indices for split
+        let from = match options.skip {
+            Some(skip) => skip + 1, // Convert 0-based skip to 1-based from
+            None => 1, // Start from the first result if skip is None
+        };
+        
+        let to = match options.take {
+            Some(take) => from + take - 1, // Calculate the last index (inclusive)
+            None => result.lines.len(), // Use all results if take is None
+        };
+        
+        // Use the built-in split method to paginate the results
+        result = result.split(from, to);
+    }
     
     Ok(result)
 }
