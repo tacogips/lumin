@@ -59,17 +59,16 @@
 //! For more comprehensive examples and details, see the documentation of the `search_files` function.
 
 use anyhow::{Context, Result};
-use globset;
 use grep::matcher::Matcher;
 use grep::regex::RegexMatcher;
 // Import removed: grep::searcher::sinks::UTF8; (no longer needed)
 use grep::searcher::{BinaryDetection, SearcherBuilder};
-use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use crate::telemetry::{LogMessage, log_with_context};
+use crate::traverse::common;
 
 /// Configuration options for file search operations.
 ///
@@ -400,6 +399,7 @@ pub struct SearchResult {
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     match_content_omit_num: None,
+///     after_context: 0,
 /// };
 ///
 /// let results = search_files(
@@ -727,6 +727,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
 ///     match_content_omit_num: None,
+///     after_context: 0,
 /// };
 /// let results = search_files(
 ///     function_pattern,
@@ -764,6 +765,7 @@ pub struct SearchResult {
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     match_content_omit_num: Some(30), // Show only 30 characters before and after matches
+///     after_context: 0,
 /// };
 /// 
 /// let long_results = search_files(
@@ -1055,73 +1057,11 @@ pub fn search_files(
 /// Returns an error if there's an issue accessing the directory or files, or if there's an error
 /// compiling the exclude glob patterns
 fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
-
-    let mut builder = WalkBuilder::new(directory);
-    builder.git_ignore(options.respect_gitignore);
-    // When not respecting gitignore, explicitly include hidden files and dirs
-    builder.hidden(options.respect_gitignore);
-    // Additional settings to ensure we fully respect/ignore gitignore as needed
-    if !options.respect_gitignore {
-        builder.ignore(false); // Turn off all ignore logic
-        builder.git_exclude(false); // Don't use git exclude files
-        builder.git_global(false); // Don't use global git ignore
-    }
-
-    // Compile exclude glob patterns if provided
-    let glob_set = if let Some(exclude_patterns) = &options.exclude_glob {
-        if !exclude_patterns.is_empty() {
-            let mut builder = globset::GlobSetBuilder::new();
-            for pattern in exclude_patterns {
-                // Build glob with appropriate case sensitivity
-                let glob = if options.case_sensitive {
-                    globset::GlobBuilder::new(pattern).build()
-                } else {
-                    globset::GlobBuilder::new(pattern)
-                        .case_insensitive(true)
-                        .build()
-                }
-                .with_context(|| format!("Failed to compile glob pattern: {}", pattern))?;
-
-                builder.add(glob);
-            }
-            Some(builder.build().context("Failed to build glob set")?)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
-    for result in builder.build() {
-        match result {
-            Ok(entry) => {
-                let path = entry.path();
-                if path.is_file() {
-                    // Skip files that match any of the exclude globs
-                    if let Some(ref glob_set) = glob_set {
-                        // Get the path relative to the search directory for better glob matching
-                        let rel_path = path.strip_prefix(directory).unwrap_or(path);
-                        if glob_set.is_match(rel_path) {
-                            // Skip this file as it matches an exclude pattern
-                            continue;
-                        }
-                    }
-                    files.push(path.to_path_buf());
-                }
-            }
-            Err(err) => {
-                log_with_context(
-                    log::Level::Warn,
-                    LogMessage {
-                        message: format!("Error walking directory: {}", err),
-                        module: "search",
-                        context: Some(vec![("directory", directory.display().to_string())]),
-                    },
-                );
-            }
-        }
-    }
-
-    Ok(files)
+    // Use the common function from traverse module
+    common::collect_files_with_excludes(
+        directory,
+        options.respect_gitignore,
+        options.case_sensitive,
+        options.exclude_glob.as_ref(),
+    )
 }

@@ -22,6 +22,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: None,
+        after_context: 0,
     };
     
     let results = search_files("pattern", temp_dir.path(), &options)?;
@@ -37,6 +38,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: Some(5),
+        after_context: 0,
     };
     
     let omitted_results = search_files("pattern", temp_dir.path(), &omit_options)?;
@@ -64,6 +66,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: Some(20),
+        after_context: 0,
     };
     
     let omitted_results2 = search_files("pattern", temp_dir.path(), &omit_options2)?;
@@ -94,6 +97,7 @@ fn test_content_omission() -> Result<()> {
         respect_gitignore: true,
         exclude_glob: None,
         match_content_omit_num: Some(3), // Only 3 chars, much smaller than "VERYLONGPATTERNSTRING"
+        after_context: 0,
     };
     
     let long_match_results = search_files("verylongpatternstring", temp_dir.path(), &small_omit_options)?;
