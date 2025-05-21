@@ -29,8 +29,8 @@ This document describes the implementation of the lumin utility, focusing on des
 ### Search Functionality (`search/mod.rs`)
 - **Description**: Searches for patterns in files using the `grep` crate
 - **Key components**:
-  - `SearchOptions`: Controls case sensitivity and gitignore respect
-  - `SearchResult`: Contains matched file path, line number, and content
+  - `SearchOptions`: Controls case sensitivity, gitignore respect, and context lines (before/after matches)
+  - `SearchResult`: Contains matched file path, line number, content, and context indicators
   - `search_files()`: Main search function
   - `collect_files()`: Helper to gather files respecting gitignore settings
 
@@ -220,6 +220,25 @@ This document describes the implementation of the lumin utility, focusing on des
   ```
 
 ## Recent Changes
+
+### 2025-05-21: Added Before-Context Feature to Search Functionality
+- Implemented before-context functionality similar to grep's -B option
+- Changes:
+  - Added `before_context` field to `SearchOptions` struct
+  - Updated `SearcherBuilder` configuration to use grep's built-in before-context functionality
+  - Enhanced test suite with specific before-context test cases and edge case handling
+  - Added CLI option with `-B` shorthand for specifying before-context lines
+  - Created comprehensive tests for both individual and combined context usage
+- Benefits:
+  - Complete context viewing around matches (both before and after)
+  - Improved code understanding by seeing declarations before implementations
+  - Full compatibility with grep-like behavior (-B and -A options work together)
+  - Edge cases properly handled (matches on first/last lines)
+- Implementation details:
+  - Integrated with grep's native context support
+  - Preserved existing after-context functionality
+  - Combined context properly merges when matches are close to each other
+  - Added test cases for edge scenarios like matches on first/last lines
 
 ### 2025-05-10: Added After-Context Feature to Search Functionality
 - Implemented after-context functionality similar to grep's -A option

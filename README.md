@@ -27,7 +27,9 @@ Options:
 - `--case-sensitive`: Enable case-sensitive matching
 - `--ignore-gitignore`: Ignore .gitignore rules
 - `--omit-context <NUM>`: Limit context around matches to show only NUM characters before and after each match (the matched pattern itself is always displayed in full)
+- `-B, --before-context <NUM>`: Show NUM lines before each match (similar to grep's -B option)
 - `-A, --after-context <NUM>`: Show NUM lines after each match (similar to grep's -A option)
+- Both -B and -A can be combined to show context on both sides of matches
 
 ### Traverse directories
 
@@ -59,7 +61,7 @@ The view command outputs a structured JSON with:
 - Type detection using extension and content analysis
 - Strongly typed output structures
 - Comprehensive error handling
-- Context control for search results to focus on relevant matches
+- Comprehensive context control for search results (before/after matches) to focus on relevant code
 
 ## Development
 

@@ -14,8 +14,11 @@ This library provides functionality for searching and displaying local files.
   Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
 - Case sensitivity can be toggled via parameters.
 - Supports context control:
+  - Before-context option to show N lines preceding each match (similar to grep's -B option)
   - After-context option to show N lines following each match (similar to grep's -A option)
+  - Both options can be combined to show context on both sides of matches
   - Option to limit displayed context around matches to a specific number of characters
+  - Context lines are visually distinguished from match lines in output
 
 ### File Traversal
 
