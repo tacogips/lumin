@@ -234,7 +234,7 @@ fn test_collect_files_with_depth_limit() -> Result<()> {
     create_test_files_for_glob(temp_path)?;
 
     // Base options
-    let mut base_options = SearchOptions {
+    let base_options = SearchOptions {
         case_sensitive: false,
         respect_gitignore: false,
         exclude_glob: None,

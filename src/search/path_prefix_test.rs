@@ -2,12 +2,13 @@
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use anyhow::Result;
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
-    use anyhow::Result;
     use tempfile::TempDir;
+
+    use crate::search::{SearchOptions, search_files};
 
     #[test]
     fn test_path_prefix_removal() -> Result<()> {
