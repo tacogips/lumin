@@ -3,7 +3,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
+#[cfg(test)]
+mod path_prefix_test;
+
 // Reuse the common traversal logic
+use crate::paths::remove_path_prefix;
 use crate::telemetry::{LogMessage, log_with_context};
 use crate::traverse::common::{build_walk, is_hidden_path};
 
@@ -18,6 +22,22 @@ pub struct TreeOptions {
     
     /// Maximum depth of directory traversal (number of directory levels to explore)
     pub depth: Option<usize>,
+    
+    /// Optional path prefix to remove from directory paths in tree results.
+    ///
+    /// When set to `Some(path)`, this prefix will be removed from the beginning of each directory path in the results.
+    /// If a directory path doesn't start with this prefix, it will be left unchanged.
+    /// When set to `None` (default), directory paths are returned as-is.
+    ///
+    /// This is useful when you want to display relative paths instead of full paths in results,
+    /// or when you want to normalize paths for consistency.
+    ///
+    /// # Examples
+    ///
+    /// - `omit_path_prefix: Some(PathBuf::from("/home/user/projects/myrepo"))` will transform a directory path like
+    ///   `/home/user/projects/myrepo/src/util` to `src/util` in the results
+    /// - `omit_path_prefix: None` will leave all directory paths unchanged
+    pub omit_path_prefix: Option<std::path::PathBuf>,
 }
 
 impl Default for TreeOptions {
@@ -26,6 +46,7 @@ impl Default for TreeOptions {
             case_sensitive: false,
             respect_gitignore: true,
             depth: Some(20),
+            omit_path_prefix: None,
         }
     }
 }
@@ -72,8 +93,16 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
     // Map to organize entries by directory
     let mut dirs_map: HashMap<String, Vec<Entry>> = HashMap::new();
 
+    // Process root directory with path prefix removal if configured
+    let root_dir_path = if let Some(prefix) = &options.omit_path_prefix {
+        let processed_path = remove_path_prefix(directory, prefix);
+        processed_path
+    } else {
+        directory.to_path_buf()
+    };
+    
     // Add the root directory as the first entry
-    let root_dir_key = directory.to_string_lossy().to_string();
+    let root_dir_key = root_dir_path.to_string_lossy().to_string();
     dirs_map.insert(root_dir_key.clone(), Vec::new());
 
     // Process each entry from the walker
@@ -104,6 +133,13 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
         if options.respect_gitignore && is_hidden_path(path) {
             continue;
         }
+
+        // Process the path with prefix removal if configured
+        let processed_path = if let Some(prefix) = &options.omit_path_prefix {
+            remove_path_prefix(path, prefix)
+        } else {
+            path.to_path_buf()
+        };
 
         // For files directly in the root directory
         if let Some(parent) = path.parent() {
@@ -136,13 +172,25 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
                         .or_default()
                         .push(entry);
 
-                    // Also create an entry for this directory
-                    let sub_dir_key = path.to_string_lossy().to_string();
+                    // Also create an entry for this directory with processed path
+                    let sub_dir_key = processed_path.to_string_lossy().to_string();
                     dirs_map.insert(sub_dir_key, Vec::new());
                 }
             } else {
                 // For entries not directly in root
-                let parent_key = parent.to_string_lossy().to_string();
+                // Get the processed parent path
+                let processed_parent = if let Some(processed_parent) = processed_path.parent() {
+                    processed_parent.to_path_buf()
+                } else {
+                    // Fallback if we can't get the parent of processed path
+                    if let Some(prefix) = &options.omit_path_prefix {
+                        remove_path_prefix(parent, prefix)
+                    } else {
+                        parent.to_path_buf()
+                    }
+                };
+                
+                let parent_key = processed_parent.to_string_lossy().to_string();
 
                 // Make sure the parent directory exists in our map
                 if !dirs_map.contains_key(&parent_key) {
@@ -169,8 +217,8 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
                     let entry = Entry::Directory { name: dir_name };
                     dirs_map.entry(parent_key).or_default().push(entry);
 
-                    // Also create an entry for this directory
-                    let sub_dir_key = path.to_string_lossy().to_string();
+                    // Also create an entry for this directory with processed path
+                    let sub_dir_key = processed_path.to_string_lossy().to_string();
                     dirs_map.insert(sub_dir_key, Vec::new());
                 }
             }
@@ -185,8 +233,15 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
 
     // If no directories have entries, add at least the root directory with a placeholder
     if result.is_empty() {
+        // Apply path prefix removal to root directory if configured
+        let root_dir_path = if let Some(prefix) = &options.omit_path_prefix {
+            remove_path_prefix(directory, prefix)
+        } else {
+            directory.to_path_buf()
+        };
+        
         result.push(DirectoryTree {
-            dir: directory.to_string_lossy().to_string(),
+            dir: root_dir_path.to_string_lossy().to_string(),
             entries: vec![Entry::Directory {
                 name: ".".to_string(),
             }],

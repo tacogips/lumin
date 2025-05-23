@@ -111,6 +111,7 @@ use std::path::{Path, PathBuf};
 
 // Common utilities for traverse and tree operations
 pub mod common;
+use crate::paths::remove_path_prefix;
 use crate::telemetry::{log_with_context, LogMessage};
 use common::{build_walk, is_hidden_path};
 
@@ -123,6 +124,7 @@ use common::{build_walk, is_hidden_path};
 ///
 /// ```
 /// use lumin::traverse::TraverseOptions;
+/// use std::path::PathBuf;
 ///
 /// // Default options: case-insensitive, respect gitignore, only text files, no pattern
 /// let default_options = TraverseOptions::default();
@@ -134,6 +136,7 @@ use common::{build_walk, is_hidden_path};
 ///     only_text_files: false,
 ///     pattern: Some("**/*.{rs,toml}".to_string()),
 ///     depth: Some(10),
+///     omit_path_prefix: None,
 /// };
 ///
 /// // Case-insensitive, include all files, with a substring pattern
@@ -143,6 +146,17 @@ use common::{build_walk, is_hidden_path};
 ///     only_text_files: false,
 ///     pattern: Some("config".to_string()),
 ///     depth: None,
+///     omit_path_prefix: None,
+/// };
+/// 
+/// // With path prefix removal to show relative paths
+/// let prefix_options = TraverseOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     only_text_files: true,
+///     pattern: None,
+///     depth: Some(20),
+///     omit_path_prefix: Some(PathBuf::from("/home/user/projects/myrepo")),
 /// };
 /// ```
 #[derive(Debug, Clone)]
@@ -295,6 +309,26 @@ pub struct TraverseOptions {
     /// - With `depth: Some(5)`, the traversal will go up to 5 levels deep
     /// - With `depth: None`, all subdirectories will be explored regardless of depth
     pub depth: Option<usize>,
+    
+    /// Optional path prefix to remove from file paths in traversal results.
+    ///
+    /// When set to `Some(path)`, this prefix will be removed from the beginning of each file path in the results.
+    /// If a file path doesn't start with this prefix, it will be left unchanged.
+    /// When set to `None` (default), file paths are returned as-is.
+    ///
+    /// This is useful when you want to display relative paths instead of full paths in results,
+    /// or when you want to normalize paths for consistency.
+    ///
+    /// # Examples
+    ///
+    /// - `omit_path_prefix: Some(PathBuf::from("/home/user/projects/myrepo"))` will transform a file path like
+    ///   `/home/user/projects/myrepo/src/main.rs` to `src/main.rs` in the results
+    /// - `omit_path_prefix: None` will leave all file paths unchanged
+    ///
+    /// If a file path doesn't start with the specified prefix, it will remain unchanged. For example,
+    /// with the prefix `/home/user/projects/myrepo`, a file path like `/var/log/syslog` would remain
+    /// `/var/log/syslog` in the results.
+    pub omit_path_prefix: Option<PathBuf>,
 }
 
 impl Default for TraverseOptions {
@@ -305,6 +339,7 @@ impl Default for TraverseOptions {
             only_text_files: true,
             pattern: None,
             depth: Some(20),
+            omit_path_prefix: None,
         }
     }
 }
@@ -590,6 +625,16 @@ impl TraverseResult {
 ///         ..TraverseOptions::default()
 ///     }
 /// ).unwrap();
+/// 
+/// // Find files with path prefix removal (to show relative paths in results)
+/// let path_prefix_options = traverse_directory(
+///     Path::new("/home/user/project"),
+///     &TraverseOptions {
+///         pattern: Some("**/*.rs".to_string()),
+///         omit_path_prefix: Some(PathBuf::from("/home/user/project")), // Remove this prefix from result paths
+///         ..TraverseOptions::default()
+///     }
+/// ).unwrap();
 /// ```
 pub fn traverse_directory(
     directory: &Path,
@@ -687,9 +732,16 @@ pub fn traverse_directory(
                         } else {
                             "unknown".to_string()
                         };
+                        
+                        // Apply path prefix removal if configured
+                        let processed_path = if let Some(prefix) = &options.omit_path_prefix {
+                            remove_path_prefix(&path.to_path_buf(), prefix)
+                        } else {
+                            path.to_path_buf()
+                        };
 
                         results.push(TraverseResult {
-                            file_path: path.to_path_buf(),
+                            file_path: processed_path,
                             file_type,
                         });
                     }
@@ -714,4 +766,74 @@ pub fn traverse_directory(
     results.sort_by(|a, b| a.file_path.cmp(&b.file_path));
 
     Ok(results)
+}
+
+#[cfg(test)]
+mod path_prefix_test;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_omit_path_prefix() -> Result<()> {
+        // Create a temporary directory
+        let temp_dir = TempDir::new()?;
+        let temp_path = temp_dir.path();
+
+        // Create some test files
+        let test_files = ["file1.txt", "file2.rs", "subdir/file3.md"];
+        for file_path in &test_files {
+            let full_path = temp_path.join(file_path);
+            if let Some(parent) = full_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            let mut file = File::create(full_path)?;
+            file.write_all(b"test content")?;
+        }
+
+        // Test with path prefix removal
+        let options = TraverseOptions {
+            case_sensitive: false,
+            respect_gitignore: false, // No gitignore in temp dir
+            only_text_files: true,
+            pattern: None,
+            depth: None,
+            omit_path_prefix: Some(temp_path.to_path_buf()),
+        };
+
+        let results = traverse_directory(temp_path, &options)?;
+
+        // Check that prefixes were removed
+        for result in &results {
+            // Paths should not start with the temp directory
+            assert!(!result.file_path.starts_with(temp_path));
+            
+            // Check that each file exists in our test files array (after normalization)
+            let normalized_path = result.file_path.to_string_lossy().to_string();
+            let found = test_files.iter().any(|f| {
+                normalized_path == *f || normalized_path.replace("\\", "/") == *f
+            });
+            assert!(found, "File path {} not found in test files", normalized_path);
+        }
+
+        // Test without path prefix removal
+        let options_no_prefix = TraverseOptions {
+            omit_path_prefix: None,
+            ..options
+        };
+
+        let results_no_prefix = traverse_directory(temp_path, &options_no_prefix)?;
+
+        // Check that prefixes were not removed
+        for result in &results_no_prefix {
+            // Paths should start with the temp directory
+            assert!(result.file_path.starts_with(temp_path));
+        }
+
+        Ok(())
+    }
 }
