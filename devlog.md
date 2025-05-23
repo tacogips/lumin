@@ -223,6 +223,27 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### Fixed Documentation Style and SearchOptions Structure Compatibility
+
+Implemented fixes to address compatibility issues with the `SearchOptions` struct and improved documentation organization:
+
+1. Fixed documentation style in `traverse/mod.rs`:
+   - Converted inner doc comments (`//!`) to regular doc comments (`///`) for documentation after imports
+   - Improved organization of module documentation
+   - Fixed potential confusion in documentation structure
+
+2. Updated `SearchOptions` usage in example code and tests:
+   - Added the required `omit_path_prefix: None` field to all `SearchOptions` initializations in test examples
+   - Ensured backward compatibility with code examples
+   - Fixed all documentation tests to properly initialize the `SearchOptions` struct
+
+3. Resolved import issues for `PathBuf`:
+   - Removed duplicate imports in the `traverse` module
+   - Added necessary imports in code examples
+   - Ensured consistent import style throughout the codebase
+
+These changes improved the robustness of the codebase, fixed all test failures, and ensured documentation examples reflect the current API requirements.
+
 ### Added Deterministic Sorting of Search Results
 
 Enhanced the `SearchResult` type to provide consistent and deterministic ordering of search results based on file path and line number. This improvement ensures that search results are always presented in a predictable order, making it easier for users to navigate through results when there are multiple matches across different files.

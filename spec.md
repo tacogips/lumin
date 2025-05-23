@@ -14,6 +14,14 @@ This library provides functionality for searching and displaying local files.
   Files listed in .gitignore (if present in the target directory) are excluded by default, but this can be overridden with a parameter.
 - Case sensitivity can be toggled via parameters.
 - Search results are automatically sorted by file path (lexicographically) and line number (numerically) for deterministic ordering.
+- Supports rich configuration via the `SearchOptions` struct:
+  - Case sensitivity control with `case_sensitive` field
+  - Gitignore respect control with `respect_gitignore` field
+  - File inclusion/exclusion with `include_glob` and `exclude_glob` fields
+  - Path prefix omission with `omit_path_prefix` for display purposes
+  - Match content context control with `match_content_omit_num`
+  - Depth limiting with `depth` field
+  - Pagination support with `skip` and `take` fields
 - Supports context control:
   - Before-context option to show N lines preceding each match (similar to grep's -B option)
   - After-context option to show N lines following each match (similar to grep's -A option)
