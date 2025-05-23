@@ -78,6 +78,7 @@ fn test_collect_files_with_include_glob() -> Result<()> {
         respect_gitignore: false, // No gitignore in our temp dir
         exclude_glob: None,
         include_glob: None,
+        omit_path_prefix: None,
         match_content_omit_num: None,
         depth: None,
         before_context: 0,
@@ -238,6 +239,7 @@ fn test_collect_files_with_depth_limit() -> Result<()> {
         respect_gitignore: false,
         exclude_glob: None,
         include_glob: None,
+        omit_path_prefix: None,
         match_content_omit_num: None,
         depth: None, // Will be set in each test case
         before_context: 0,
@@ -379,6 +381,7 @@ fn test_collect_files_with_empty_include_glob() -> Result<()> {
         respect_gitignore: false,
         exclude_glob: None,
         include_glob: Some(vec![]), // Empty include_glob
+        omit_path_prefix: None,
         match_content_omit_num: None,
         depth: None,
         before_context: 0,

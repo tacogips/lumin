@@ -19,6 +19,8 @@ pub mod traverse;
 pub mod tree;
 /// File content viewing with type detection and formatting
 pub mod view;
+/// Path manipulation utilities
+pub mod paths;
 
 /// Telemetry and logging configuration
 pub mod telemetry;

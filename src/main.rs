@@ -136,6 +136,7 @@ fn main() -> Result<()> {
                 respect_gitignore: !no_ignore,
                 exclude_glob: None,
                 include_glob: None,
+                omit_path_prefix: None,
                 match_content_omit_num: *omit_context,
                 depth: if *max_depth == 0 { None } else { Some(*max_depth) },
                 before_context: *before_context,

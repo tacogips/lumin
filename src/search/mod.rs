@@ -67,6 +67,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
+use crate::paths::remove_path_prefix;
 use crate::telemetry::{LogMessage, log_with_context};
 use crate::traverse::common;
 
@@ -79,6 +80,7 @@ use crate::traverse::common;
 ///
 /// ```
 /// use lumin::search::SearchOptions;
+/// use std::path::PathBuf;
 ///
 /// // Default options: case-insensitive search respecting gitignore files
 /// let default_options = SearchOptions::default();
@@ -89,6 +91,7 @@ use crate::traverse::common;
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     include_glob: None,
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0, // No lines before matches
@@ -103,6 +106,7 @@ use crate::traverse::common;
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: None,
+///     omit_path_prefix: None,
 ///     match_content_omit_num: Some(30), // Only show 30 characters before and after matches (full matches always preserved)
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
@@ -117,6 +121,7 @@ use crate::traverse::common;
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()]), // Only search Rust and TOML files
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -131,10 +136,26 @@ use crate::traverse::common;
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: None,
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 3, // Show 3 lines before each match
 ///     after_context: 2, // Show 2 lines after each match
+///     skip: None,
+///     take: None,
+/// };
+///
+/// // Search with path prefix removal (to show relative paths in results)
+/// let path_prefix_options = SearchOptions {
+///     case_sensitive: false,
+///     respect_gitignore: true,
+///     exclude_glob: None,
+///     include_glob: None,
+///     omit_path_prefix: Some(PathBuf::from("/home/user/projects/myrepo")), // Remove this prefix from result paths
+///     match_content_omit_num: None,
+///     depth: Some(20),
+///     before_context: 0,
+///     after_context: 0,
 ///     skip: None,
 ///     take: None,
 /// };
@@ -219,6 +240,26 @@ pub struct SearchOptions {
     /// - `include_glob: Some(vec!["**/nested/**".to_string()])` will only search files in directories named "nested" at any level
     /// - `include_glob: None` means all files will be included (subject to other filtering criteria)
     pub include_glob: Option<Vec<String>>,
+
+    /// Optional path prefix to remove from file paths in search results.
+    ///
+    /// When set to `Some(path)`, this prefix will be removed from the beginning of each file path in the search results.
+    /// If a file path doesn't start with this prefix, it will be left unchanged.
+    /// When set to `None` (default), file paths are returned as-is.
+    ///
+    /// This is useful when you want to display relative paths instead of full paths in search results,
+    /// or when you want to normalize paths for consistency.
+    ///
+    /// # Examples
+    ///
+    /// - `omit_path_prefix: Some(PathBuf::from("/home/user/projects/myrepo"))` will transform a file path like
+    ///   `/home/user/projects/myrepo/src/main.rs` to `src/main.rs` in the search results
+    /// - `omit_path_prefix: None` will leave all file paths unchanged
+    ///
+    /// If a file path doesn't start with the specified prefix, it will remain unchanged. For example,
+    /// with the prefix `/home/user/projects/myrepo`, a file path like `/var/log/syslog` would remain
+    /// `/var/log/syslog` in the search results.
+    pub omit_path_prefix: Option<PathBuf>,
 
     /// Optional setting to limit the number of characters displayed around matches in search results.
     ///
@@ -335,6 +376,7 @@ impl Default for SearchOptions {
             respect_gitignore: true,
             exclude_glob: None,
             include_glob: None,
+            omit_path_prefix: None,
             match_content_omit_num: None,
             depth: Some(20),
             before_context: 0,
@@ -1322,10 +1364,17 @@ pub fn search_files(
 
         // Process all matches
         for (line_number, content, is_context) in matches {
+            // Apply path prefix removal if configured
+            let processed_path = if let Some(prefix) = &options.omit_path_prefix {
+                remove_path_prefix(&file_path, prefix)
+            } else {
+                file_path.clone()
+            };
+    
             // For context lines, we don't need to apply omission logic
             if is_context {
                 result_lines.push(SearchResultLine {
-                    file_path: file_path.clone(),
+                    file_path: processed_path,
                     line_number,
                     line_content: content,
                     content_omitted: false,
@@ -1482,7 +1531,7 @@ pub fn search_files(
             };
 
             result_lines.push(SearchResultLine {
-                file_path: file_path.clone(),
+                file_path: processed_path,
                 line_number,
                 line_content,
                 content_omitted,
@@ -1623,6 +1672,7 @@ mod tests {
             respect_gitignore: false, // No gitignore in our temp dir
             exclude_glob: None,
             include_glob: None,
+            omit_path_prefix: None,
             match_content_omit_num: None,
             depth: None,
             before_context: 0,
@@ -1740,3 +1790,7 @@ mod collect_files_test;
 // Tests for pagination and sorting behavior
 #[cfg(test)]
 mod pagination_test;
+
+// Tests for path prefix removal functionality
+#[cfg(test)]
+mod path_prefix_test;
