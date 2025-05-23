@@ -205,6 +205,7 @@ fn main() -> Result<()> {
                 only_text_files: !include_binary,
                 pattern: pattern.clone(),
                 depth: if *max_depth == 0 { None } else { Some(*max_depth) },
+                omit_path_prefix: None,
             };
 
             let results = traverse_directory(directory, &options)?;
@@ -235,6 +236,7 @@ fn main() -> Result<()> {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
                 depth: if *max_depth == 0 { None } else { Some(*max_depth) },
+                omit_path_prefix: None,
             };
 
             let results = generate_tree(directory, &options)?;

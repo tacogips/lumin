@@ -7,101 +7,101 @@
 //!
 //! The traverse functionality supports both glob and substring pattern matching for
 //! file filtering, allowing for powerful and flexible directory exploration.
-//!
-//! ## Glob Pattern Syntax
-//!
-//! Glob patterns allow for rich file matching using special characters:
-//!
-//! - **Single-character wildcards**: `?` matches any single character
-//!   - `file?.txt` matches `file1.txt` and `fileA.txt`, but not `file10.txt`
-//!   - `level?.txt` matches `level1.txt` and `levelA.txt` exactly
-//!   - `log_202?_??.txt` matches files like `log_2023_01.txt` or `log_2022_10.txt`
-//!   - `data_v?.json` matches `data_v1.json` or `data_v2.json` but not `data_v10.json`
-//!   - `user?.{json,xml}` matches `user1.json` or `userA.xml` but not `user10.xml`
-//!
-//! - **Multi-character wildcards**: `*` matches any number of characters within a path segment
-//!   - `*.txt` matches all .txt files in the current directory
-//!   - `test_*.txt` matches `test_file.txt` and `test_data.txt`
-//!   - `*_controller.js` matches all JavaScript controller files
-//!   - `log_*.log` matches all log files with a prefix like `log_error.log` or `log_system.log`
-//!   - `*2023*.csv` matches all CSV files containing 2023 in their name
-//!
-//! - **Recursive matching**: `**` matches any number of nested directories
-//!   - `**/*.rs` matches all Rust files in any subdirectory
-//!   - `src/**/test/*.rs` matches all Rust files in any `test` directory under `src`
-//!   - `**/*.{js,ts}` matches all JavaScript and TypeScript files anywhere
-//!   - `**/assets/**/*.{png,jpg,svg}` matches all images in any assets directory
-//!   - `**/{bin,lib}/**/*.so` matches all .so files in bin or lib directories at any depth
-//!
-//! - **Prefix matching**: Using wildcards at the end of a pattern to match file prefixes
-//!   - `config_*` matches only files starting with "config_" in the current directory
-//!   - `**/prefix_*` matches files starting with "prefix_" in any directory
-//!   - `src/lib_*` matches files starting with "lib_" in the src directory
-//!   - `module_*.{rs,ts}` matches files starting with "module_" with .rs or .ts extensions
-//!   - `api_v1_*` matches all files starting with "api_v1_" in the current directory
-//!   - `**/model_*.{rs,go,py}` matches model files with specific extensions
-//!   - `src/**/util_*.*` matches utility files in any subdirectory of src
-//!   - `test_*` matches all files starting with "test_" in the current directory
-//!
-//! - **Character classes**: `[abc]` matches any character in the set
-//!   - `file[123].txt` matches `file1.txt`, `file2.txt`, and `file3.txt`
-//!   - `[a-z]*.txt` matches any file starting with a lowercase letter
-//!   - `level[a-zA-Z].txt` matches `levelA.txt` or `levelb.txt`
-//!   - `user[A-D]_profile.json` matches files like `userA_profile.json` or `userC_profile.json`
-//!   - `log_202[0-3]_*.log` matches log files for years 2020-2023
-//!   - `[a-z][0-9]_*.data` matches files starting with a lowercase letter followed by a digit
-//!   - `report_q[1-4]_*.pdf` matches quarterly reports Q1-Q4
-//!   - `server[1-5]_config.yaml` matches configuration files for servers 1-5
-//!
-//! - **Negated character classes**: `[!abc]` or `[^abc]` matches any character not in the set
-//!   - `[!0-9]*.txt` matches files not starting with a digit
-//!   - `file[^.].txt` matches `fileA.txt` but not `file..txt`
-//!   - `[!a-z]*.json` matches JSON files not starting with lowercase letters
-//!   - `user_[!0-5]*.log` matches user logs not in the 0-5 range
-//!   - `[!_.]*.config` matches config files not starting with _ or .
-//!   - `*[!~#]` matches files not ending with ~ or # (often temp files)
-//!   - `*.[!bak]` matches files without the .bak extension
-//!
-//! - **Brace expansion**: `{a,b,c}` matches any of the comma-separated patterns
-//!   - `*.{txt,md,rs}` matches files with .txt, .md, or .rs extensions
-//!   - `{src,tests}/*.rs` matches Rust files in either src or tests directories
-//!   - `{config,settings}.*` matches config/settings files with any extension
-//!   - `{api,service,model}/*.{js,ts}` matches JavaScript/TypeScript files in specific directories
-//!   - `{docker,kubernetes,k8s}/*.{yml,yaml}` matches container configuration files
-//!   - `{2021,2022,2023}/*.{csv,xlsx}` matches data files for specific years
-//!   - `{debug,release}/bin/*.{exe,dll}` matches binary files in debug or release directories
-//!   - `{app,web}/{css,js,img}/*` matches frontend assets in different directories
-//!   - `{pkg,cmd,internal}/**/*.go` matches Go code in specific package directories
-//!
-//! - **Complex combinations**:
-//!   - `**/{test,spec}/*[0-9]?.{js,ts}` combines multiple glob features
-//!   - `**/[a-z]*-[0-9].{txt,md,json}` matches specific naming patterns
-//!   - `src/**/{controllers,services}/*[A-Z]*{Controller,Service}.{ts,js}` matches controller and service classes
-//!   - `**/{v1,v2}/{api,internal}/**/*.[jt]s` combines version and directory patterns for JS/TS files
-//!   - `{tests,spec}/**/{unit,integration}/**/*_test_*.{js,go,rs}` matches test files in structured test directories
-//!   - `**/{bin,build}/{debug,release}/[a-z0-9]*[0-9]` matches binary files with specific naming patterns
-//!   - `**/202[0-3]/{q[1-4],annual}/**/*.{csv,json,xlsx}` matches financial data organized by year and quarter
-//!   - `**/{user,account,profile}/**/*[!test].{js,ts}` matches non-test files in specific feature directories
-//!   - `{apps,src}/{backend,frontend}/**/*.{css,scss}` matches style files in specific application directories
-//!   - `**/{lib,vendor}/[a-zA-Z]*[0-9]*.{so,dll,dylib}` matches versioned library files
-//!
-//! ## Substring Pattern Matching
-//!
-//! When a pattern doesn't contain glob special characters, it's treated as a simple
-//! substring match against the entire file path:
-//!
-//! - `config` matches any file with "config" in its path (e.g., "config.toml", "app_config.json")
-//! - `test` matches any file with "test" in its path (e.g., "test_data.txt", "tests/example.rs")
-//! - `controller` matches files like "UserController.js" or "api/controllers/auth.js"
-//! - `2023` matches any file with "2023" in the path (e.g., "logs/2023/", "report-2023.pdf")
-//! - `api` matches any API-related files regardless of location or naming convention
-//! - `model` matches model files like "user_model.rb" or "src/models/post.rs"
-//! - `util` matches utility files and directories like "utils.js" or "src/utils/"
-//! - `backup` matches backup files like "config.backup" or "backups/data.json"
-//! - `v1` matches versioned files like "api_v1.js" or "v1/endpoints.ts"
-//! - Substring matching respects the `case_sensitive` option
-//!
-//! For more examples and detailed usage patterns, see the `traverse_directory` function.
+
+/// ## Glob Pattern Syntax
+///
+/// Glob patterns allow for rich file matching using special characters:
+///
+/// - **Single-character wildcards**: `?` matches any single character
+///   - `file?.txt` matches `file1.txt` and `fileA.txt`, but not `file10.txt`
+///   - `level?.txt` matches `level1.txt` and `levelA.txt` exactly
+///   - `log_202?_??.txt` matches files like `log_2023_01.txt` or `log_2022_10.txt`
+///   - `data_v?.json` matches `data_v1.json` or `data_v2.json` but not `data_v10.json`
+///   - `user?.{json,xml}` matches `user1.json` or `userA.xml` but not `user10.xml`
+///
+/// - **Multi-character wildcards**: `*` matches any number of characters within a path segment
+///   - `*.txt` matches all .txt files in the current directory
+///   - `test_*.txt` matches `test_file.txt` and `test_data.txt`
+///   - `*_controller.js` matches all JavaScript controller files
+///   - `log_*.log` matches all log files with a prefix like `log_error.log` or `log_system.log`
+///   - `*2023*.csv` matches all CSV files containing 2023 in their name
+///
+/// - **Recursive matching**: `**` matches any number of nested directories
+///   - `**/*.rs` matches all Rust files in any subdirectory
+///   - `src/**/test/*.rs` matches all Rust files in any `test` directory under `src`
+///   - `**/*.{js,ts}` matches all JavaScript and TypeScript files anywhere
+///   - `**/assets/**/*.{png,jpg,svg}` matches all images in any assets directory
+///   - `**/{bin,lib}/**/*.so` matches all .so files in bin or lib directories at any depth
+///
+/// - **Prefix matching**: Using wildcards at the end of a pattern to match file prefixes
+///   - `config_*` matches only files starting with "config_" in the current directory
+///   - `**/prefix_*` matches files starting with "prefix_" in any directory
+///   - `src/lib_*` matches files starting with "lib_" in the src directory
+///   - `module_*.{rs,ts}` matches files starting with "module_" with .rs or .ts extensions
+///   - `api_v1_*` matches all files starting with "api_v1_" in the current directory
+///   - `**/model_*.{rs,go,py}` matches model files with specific extensions
+///   - `src/**/util_*.*` matches utility files in any subdirectory of src
+///   - `test_*` matches all files starting with "test_" in the current directory
+///
+/// - **Character classes**: `[abc]` matches any character in the set
+///   - `file[123].txt` matches `file1.txt`, `file2.txt`, and `file3.txt`
+///   - `[a-z]*.txt` matches any file starting with a lowercase letter
+///   - `level[a-zA-Z].txt` matches `levelA.txt` or `levelb.txt`
+///   - `user[A-D]_profile.json` matches files like `userA_profile.json` or `userC_profile.json`
+///   - `log_202[0-3]_*.log` matches log files for years 2020-2023
+///   - `[a-z][0-9]_*.data` matches files starting with a lowercase letter followed by a digit
+///   - `report_q[1-4]_*.pdf` matches quarterly reports Q1-Q4
+///   - `server[1-5]_config.yaml` matches configuration files for servers 1-5
+///
+/// - **Negated character classes**: `[!abc]` or `[^abc]` matches any character not in the set
+///   - `[!0-9]*.txt` matches files not starting with a digit
+///   - `file[^.].txt` matches `fileA.txt` but not `file..txt`
+///   - `[!a-z]*.json` matches JSON files not starting with lowercase letters
+///   - `user_[!0-5]*.log` matches user logs not in the 0-5 range
+///   - `[!_.]*.config` matches config files not starting with _ or .
+///   - `*[!~#]` matches files not ending with ~ or # (often temp files)
+///   - `*.[!bak]` matches files without the .bak extension
+///
+/// - **Brace expansion**: `{a,b,c}` matches any of the comma-separated patterns
+///   - `*.{txt,md,rs}` matches files with .txt, .md, or .rs extensions
+///   - `{src,tests}/*.rs` matches Rust files in either src or tests directories
+///   - `{config,settings}.*` matches config/settings files with any extension
+///   - `{api,service,model}/*.{js,ts}` matches JavaScript/TypeScript files in specific directories
+///   - `{docker,kubernetes,k8s}/*.{yml,yaml}` matches container configuration files
+///   - `{2021,2022,2023}/*.{csv,xlsx}` matches data files for specific years
+///   - `{debug,release}/bin/*.{exe,dll}` matches binary files in debug or release directories
+///   - `{app,web}/{css,js,img}/*` matches frontend assets in different directories
+///   - `{pkg,cmd,internal}/**/*.go` matches Go code in specific package directories
+///
+/// - **Complex combinations**:
+///   - `**/{test,spec}/*[0-9]?.{js,ts}` combines multiple glob features
+///   - `**/[a-z]*-[0-9].{txt,md,json}` matches specific naming patterns
+///   - `src/**/{controllers,services}/*[A-Z]*{Controller,Service}.{ts,js}` matches controller and service classes
+///   - `**/{v1,v2}/{api,internal}/**/*.[jt]s` combines version and directory patterns for JS/TS files
+///   - `{tests,spec}/**/{unit,integration}/**/*_test_*.{js,go,rs}` matches test files in structured test directories
+///   - `**/{bin,build}/{debug,release}/[a-z0-9]*[0-9]` matches binary files with specific naming patterns
+///   - `**/202[0-3]/{q[1-4],annual}/**/*.{csv,json,xlsx}` matches financial data organized by year and quarter
+///   - `**/{user,account,profile}/**/*[!test].{js,ts}` matches non-test files in specific feature directories
+///   - `{apps,src}/{backend,frontend}/**/*.{css,scss}` matches style files in specific application directories
+///   - `**/{lib,vendor}/[a-zA-Z]*[0-9]*.{so,dll,dylib}` matches versioned library files
+///
+/// ## Substring Pattern Matching
+///
+/// When a pattern doesn't contain glob special characters, it's treated as a simple
+/// substring match against the entire file path:
+///
+/// - `config` matches any file with "config" in its path (e.g., "config.toml", "app_config.json")
+/// - `test` matches any file with "test" in its path (e.g., "test_data.txt", "tests/example.rs")
+/// - `controller` matches files like "UserController.js" or "api/controllers/auth.js"
+/// - `2023` matches any file with "2023" in the path (e.g., "logs/2023/", "report-2023.pdf")
+/// - `api` matches any API-related files regardless of location or naming convention
+/// - `model` matches model files like "user_model.rb" or "src/models/post.rs"
+/// - `util` matches utility files and directories like "utils.js" or "src/utils/"
+/// - `backup` matches backup files like "config.backup" or "backups/data.json"
+/// - `v1` matches versioned files like "api_v1.js" or "v1/endpoints.ts"
+/// - Substring matching respects the `case_sensitive` option
+///
+/// For more examples and detailed usage patterns, see the `traverse_directory` function.
 
 use anyhow::Result;
 use globset::{GlobBuilder, GlobSetBuilder};
@@ -352,7 +352,7 @@ impl Default for TraverseOptions {
 ///
 /// ```no_run
 /// use lumin::traverse::{TraverseOptions, traverse_directory};
-/// use std::path::Path;
+/// use std::path::{Path, PathBuf};
 ///
 /// let options = TraverseOptions::default();
 /// match traverse_directory(Path::new("src"), &options) {
@@ -595,7 +595,7 @@ impl TraverseResult {
 /// ## Using Substring Patterns
 /// ```no_run
 /// use lumin::traverse::{TraverseOptions, traverse_directory};
-/// use std::path::Path;
+/// use std::path::{Path, PathBuf};
 ///
 /// // Find all files with "config" in their name
 /// let config_files = traverse_directory(

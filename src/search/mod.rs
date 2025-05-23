@@ -625,6 +625,7 @@ pub struct SearchResultLine {
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: Some(vec!["**/*.log".to_string()]),
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -786,6 +787,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: false,
 ///     exclude_glob: None,
 ///     include_glob: None,
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -815,6 +817,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["*.json".to_string(), "test/**/*.rs".to_string()]),
 ///     include_glob: None, // Search all files not excluded
+///     omit_path_prefix: None,
 ///     match_content_omit_num: Some(50), // Limit context to 50 chars before and after each match (preserving full matches)
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match
@@ -845,6 +848,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()]), // Only search Rust and TOML files
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -873,6 +877,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/target/**".to_string(), "**/node_modules/**".to_string()]),
 ///     include_glob: Some(vec!["**/*.rs".to_string(), "**/*.md".to_string()]), // Only search Rust and Markdown files
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 1,
@@ -902,6 +907,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: None,
+///     omit_path_prefix: None,
 ///     match_content_omit_num: Some(20), // Only show 20 characters around matches while preserving entire matches
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -1190,6 +1196,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: true,
 ///     exclude_glob: Some(vec!["**/tests/**".to_string(), "**/*_test.rs".to_string()]),
 ///     include_glob: None,
+///     omit_path_prefix: None,
 ///     match_content_omit_num: None,
 ///     depth: Some(20),
 ///     before_context: 0,
@@ -1233,6 +1240,7 @@ pub fn search_files_total_match_line_number(
 ///     respect_gitignore: true,
 ///     exclude_glob: None,
 ///     include_glob: Some(vec!["**/*.log".to_string()]), // Only search log files
+///     omit_path_prefix: None,
 ///     match_content_omit_num: Some(30), // Show only 30 characters before and after matches
 ///     depth: Some(20),
 ///     before_context: 2, // Show 2 lines before each match

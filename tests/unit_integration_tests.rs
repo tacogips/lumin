@@ -19,6 +19,7 @@ fn test_full_workflow() -> Result<()> {
         only_text_files: true,
         pattern: Some("**.txt".to_string()),
         depth: Some(20),
+        omit_path_prefix: None,
     };
 
     let traverse_results = traverse_directory(directory, &traverse_options)?;
@@ -48,6 +49,7 @@ fn test_full_workflow() -> Result<()> {
         case_sensitive: false,
         respect_gitignore: true,
         depth: Some(20),
+        omit_path_prefix: None,
     };
 
     let tree_results = generate_tree(directory, &tree_options)?;
