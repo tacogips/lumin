@@ -259,6 +259,13 @@ let is_included = common::path_matches_any_glob(rel_path, include_patterns, opti
 - Included prominent documentation in the main `search_files` function about the unified behavior
 - Added detailed inline comments in the implementation explaining the relative path conversion logic
 
+**Consistency Verification**: Verified and documented that all glob pattern usage across the codebase now follows consistent relative path behavior:
+- **Search module**: Both `include_glob` and `exclude_glob` use relative paths (after the fix)
+- **Traverse module**: The `pattern` field in `TraverseOptions` already used relative paths consistently
+- **Traverse common module**: Functions like `traverse_with_callback` and `collect_files_with_excludes` already used relative paths for `exclude_glob`
+- **Updated documentation**: Enhanced Rustdoc comments across all modules to clearly document the unified relative path behavior
+- **Specification updates**: Updated `spec.md` to document the consistent behavior across all modules
+
 ### Fixed Documentation Style and SearchOptions Structure Compatibility
 
 Implemented fixes to address compatibility issues with the `SearchOptions` struct and improved documentation organization:

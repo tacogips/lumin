@@ -54,6 +54,7 @@ Both `include_glob` and `exclude_glob` parameters work consistently with relativ
   - Simple substring matching (e.g., `README`, `config`) using the `regex` crate
   - Automatically detects pattern type and applies appropriate matching strategy
   - Pattern matching respects case sensitivity settings
+  - **Glob patterns use relative paths consistently with the search module**
 
 - Case sensitivity can be toggled via parameters.
 
@@ -65,13 +66,23 @@ Both `include_glob` and `exclude_glob` parameters work consistently with relativ
       directory: &Path,
       respect_gitignore: bool,
       case_sensitive: bool,
-      exclude_glob: Option<&Vec<String>>,
+      exclude_glob: Option<&Vec<String>>, // Uses relative paths consistently
       initial: T,
       callback: F,
   ) -> Result<T>
-  where
-      F: FnMut(T, &Path) -> Result<T>,
   ```
+
+#### Traverse Module Glob Pattern Consistency
+
+The traverse module follows the same relative path pattern matching as the search module:
+
+- **`exclude_glob` parameter**: Uses relative paths for consistent behavior
+- **`pattern` field in TraverseOptions**: Uses relative paths for glob pattern matching
+- **Unified behavior**: All glob patterns across search and traverse modules work the same way
+- **Example**: When traversing `/home/user/project`:
+  - File `/home/user/project/src/main.rs` is matched against relative path `src/main.rs`
+  - Pattern `**/*.rs` matches all Rust files in any subdirectory
+  - Pattern `src/**` matches all files in the src directory
   - This enables custom processing during traversal without creating intermediate collections
   - Can be used to implement specialized traversal functions for specific needs
   - All existing traversal functions are implemented on top of this generic function

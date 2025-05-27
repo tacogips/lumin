@@ -14,9 +14,16 @@ use crate::telemetry::{LogMessage, log_with_context};
 /// This function is useful for filtering files based on glob patterns.
 /// It supports standard glob syntax including wildcards, character classes, and brace expansion.
 ///
+/// ## Path Type Expectations
+///
+/// This function can work with both absolute and relative paths, but for consistency across
+/// the codebase, it's recommended to use **relative paths** when possible. Most callers in
+/// this codebase convert absolute paths to relative paths using `path.strip_prefix(directory)`
+/// before calling this function to ensure predictable pattern matching behavior.
+///
 /// # Arguments
 ///
-/// * `path` - The file path to check
+/// * `path` - The file path to check (can be absolute or relative, but relative is recommended)
 /// * `glob_patterns` - A slice of glob patterns to match against
 /// * `case_sensitive` - Whether the glob matching should be case sensitive
 ///
@@ -142,6 +149,17 @@ pub fn is_hidden_path(path: &Path) -> bool {
 /// and uses a callback to process each valid file entry, accumulating results of any type.
 /// It uses the `try_fold` method for efficient traversal and result accumulation.
 ///
+/// ## Path Matching Behavior
+///
+/// **Important**: Glob patterns in `exclude_glob` are matched against paths that are **relative to the directory**.
+/// This ensures consistent behavior with other parts of the codebase (search module's `include_glob` and `exclude_glob`,
+/// traverse module's `pattern` field) and makes patterns predictable.
+///
+/// For example, when traversing `/home/user/project`:
+/// - A file at `/home/user/project/src/main.rs` is matched against the relative path `src/main.rs`
+/// - Pattern `**/*.rs` will match all Rust files in any subdirectory
+/// - Pattern `src/**` will match all files in the src directory
+///
 /// # Type Parameters
 ///
 /// * `T` - The type of the accumulated result
@@ -153,7 +171,7 @@ pub fn is_hidden_path(path: &Path) -> bool {
 /// * `respect_gitignore` - Whether to respect gitignore rules
 /// * `case_sensitive` - Whether file path matching should be case sensitive
 /// * `max_depth` - Optional maximum directory depth to traverse
-/// * `exclude_glob` - Optional list of glob patterns to exclude files from the results
+/// * `exclude_glob` - Optional list of glob patterns to exclude files from the results (uses relative paths)
 /// * `initial` - The initial value for the result accumulator
 /// * `callback` - A function that processes each entry and updates the accumulator. This function
 ///   should take two parameters: the current accumulator value and a reference to the file path,
@@ -306,13 +324,24 @@ where
 /// It's implemented as a specialization of the more generic `traverse_with_callback` function,
 /// providing a simpler interface for the common case of just collecting file paths.
 ///
+/// ## Path Matching Behavior
+///
+/// **Important**: Glob patterns in `exclude_glob` are matched against paths that are **relative to the directory**.
+/// This ensures consistent behavior with other parts of the codebase (search module's `include_glob` and `exclude_glob`,
+/// traverse module's `pattern` field) and makes patterns predictable.
+///
+/// For example, when collecting files in `/home/user/project`:
+/// - A file at `/home/user/project/src/main.rs` is matched against the relative path `src/main.rs`
+/// - Pattern `**/*.rs` will match all Rust files in any subdirectory
+/// - Pattern `src/**` will match all files in the src directory
+///
 /// # Arguments
 ///
 /// * `directory` - The directory path to collect files from
 /// * `respect_gitignore` - Whether to respect gitignore rules
 /// * `case_sensitive` - Whether file path matching should be case sensitive
 /// * `max_depth` - Optional maximum directory depth to traverse
-/// * `exclude_glob` - Optional list of glob patterns to exclude files from the results
+/// * `exclude_glob` - Optional list of glob patterns to exclude files from the results (uses relative paths)
 ///
 /// # Returns
 ///

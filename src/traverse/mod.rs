@@ -202,8 +202,23 @@ pub struct TraverseOptions {
     /// - Glob patterns (e.g., "*.rs", "**/*.txt") with special characters like *, ?, [], etc.
     /// - Simple substring patterns (e.g., "README", "config") for searching within file paths
     ///
+    /// ## Path Matching Behavior
+    ///
+    /// **Important**: Glob patterns are matched against paths that are **relative to the traversal directory**.
+    /// This ensures consistent behavior across the codebase and makes patterns predictable.
+    ///
+    /// For example, when traversing `/home/user/project`:
+    /// - A file at `/home/user/project/src/main.rs` is matched against the relative path `src/main.rs`
+    /// - A file at `/home/user/project/docs/readme.md` is matched against the relative path `docs/readme.md`
+    ///
     /// The pattern type is automatically detected based on glob special characters.
     /// Pattern matching respects the `case_sensitive` setting.
+    ///
+    /// ## Consistency with Search Module
+    ///
+    /// This parameter works consistently with `include_glob` and `exclude_glob` in the search module -
+    /// all use relative paths for pattern matching. This unified approach allows you to use the same
+    /// pattern format across different parts of the library.
     ///
     /// ## Glob Pattern Examples
     ///
