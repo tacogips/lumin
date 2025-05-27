@@ -692,6 +692,18 @@ pub fn search_files_total_match_line_number(
 /// (and subdirectories), applying filters based on the provided options. It uses the
 /// regex syntax provided by the underlying `grep` crate.
 ///
+/// ## File Filtering Consistency
+///
+/// **Important**: Both `include_glob` and `exclude_glob` patterns are matched against 
+/// **relative paths** (relative to the search directory). This ensures consistent behavior
+/// between inclusion and exclusion filters, allowing you to use the same pattern format
+/// for both parameters.
+///
+/// For example, when searching in `/home/user/project`:
+/// - File `/home/user/project/src/main.rs` is matched against `src/main.rs`
+/// - Pattern `**/*.rs` will match all Rust files in any subdirectory
+/// - Pattern `src/**` will match all files in the src directory
+///
 /// Note: The current implementation is naive and not optimized for performance.
 /// This will be improved in future versions.
 ///
