@@ -1,0 +1,49 @@
+Regex advanced pattern test file
+
+# Basic Escaping Tests
+Literal dot: The file extension is .txt
+Literal asterisk: Important* note
+Literal plus: C++ programming language
+Literal question mark: Do you need help?
+Literal parentheses: Function(param1, param2)
+Literal brackets: Array[index] access
+Literal braces: Define a {scope}
+Literal caret: 2^10 = 1024
+Literal dollar: Price is $100
+Literal backslash: Windows\path\to\file
+Literal vertical bar: true | false
+
+# Character Classes
+Digits only: 12345
+Letters only: abcdef
+Mixed: a1b2c3
+Custom set: Only vowels: aeiou
+Not digits: @#$%^
+Word chars: abc_123
+Whitespace test:    	    
+Non-whitespace: NoSpacesHere
+
+# Repetition Tests
+Zero or more: aaaaaa
+One or more: bbbbbb
+Optional char: color and colour
+Exactly 3: exactly123
+Two to four: num123
+Five or more: repeat12345
+Lazy vs greedy: <div>Inner content</div><p>More content</p>
+
+# Boundary Tests
+Start of line: ^Beginning of a line
+End of line: At the very end$
+Word boundaries: the word is here
+Not word boundary: thewordishere
+
+# Complex Mixed Patterns
+ISO date: 2023-05-15
+Phone number: (123) 456-7890
+Hex color code: #FF5733
+Currency: $1,234.56
+Version string: v1.2.3-beta
+Semantic version: 2.1.0-alpha.1
+MD5 hash: 5d41402abc4b2a76b9719d911017c592
+Random UUID: 123e4567-e89b-12d3-a456-426614174000

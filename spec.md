@@ -17,7 +17,7 @@ This library provides functionality for searching and displaying local files.
 - Supports rich configuration via the `SearchOptions` struct:
   - Case sensitivity control with `case_sensitive` field
   - Gitignore respect control with `respect_gitignore` field
-  - File inclusion/exclusion with `include_glob` and `exclude_glob` fields
+  - File inclusion/exclusion with `include_glob` and `exclude_glob` fields (both use relative paths consistently)
   - Path prefix omission with `omit_path_prefix` for display purposes
   - Match content context control with `match_content_omit_num`
   - Depth limiting with `depth` field
@@ -28,6 +28,18 @@ This library provides functionality for searching and displaying local files.
   - Both options can be combined to show context on both sides of matches
   - Option to limit displayed context around matches to a specific number of characters
   - Context lines are visually distinguished from match lines in output
+
+#### Glob Pattern Consistency
+
+Both `include_glob` and `exclude_glob` parameters work consistently with relative paths:
+
+- **Path Matching**: All glob patterns are matched against paths relative to the search directory
+- **Consistency**: Both inclusion and exclusion filters use the same path format, making the API intuitive
+- **Example**: When searching in `/home/user/project`:
+  - File `/home/user/project/src/main.rs` is matched against the relative path `src/main.rs`
+  - Pattern `**/*.rs` matches all Rust files in any subdirectory
+  - Pattern `src/**` matches all files in the src directory
+- **Historical Note**: This consistency was implemented to fix an earlier inconsistency where `include_glob` used absolute paths while `exclude_glob` used relative paths
 
 ### File Traversal
 

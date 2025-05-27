@@ -1,0 +1,50 @@
+Regex practical pattern test file
+
+# Email Addresses
+Contact us at: user@example.com
+Alternative email: first.last@subdomain.example.co.uk
+Invalid email: not.an.email
+
+# URLs
+Website: https://www.example.com
+Secure URL: https://api.example.org/v1/users?id=123
+Simple URL: http://example.net
+Invalid URL: not-a-url.com
+
+# IP Addresses
+IPv4: 192.168.1.1
+Local IP: 127.0.0.1
+Broadcast: 255.255.255.255
+Invalid IP: 999.999.999.999
+
+# Programming Patterns
+Rust function: fn calculate_sum(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+Rust method: impl Calculator {
+    pub fn multiply(&self, a: f64, b: f64) -> f64 {
+        a * b
+    }
+}
+
+# Markdown
+# Heading 1
+## Heading 2
+### Heading 3
+Not a heading #hashtag
+
+# JSON
+{
+    "name": "John Doe",
+    "age": 30,
+    "isActive": true,
+    "scores": null
+}
+
+# CSS Colors
+Background: #fff;
+Border: #3a86ff;
+Text color: #333;
+RGB color: rgb(255, 99, 71);
+RGBA color: rgba(255, 99, 71, 0.5);

@@ -252,6 +252,13 @@ let is_included = common::path_matches_any_glob(rel_path, include_patterns, opti
 
 **Testing**: Added comprehensive integration test (`test_include_glob_fix.rs`) to verify the consistent behavior and prevent regressions.
 
+**Documentation**: Enhanced Rustdoc comments throughout the search module to clearly document the relative path behavior:
+- Added detailed path matching behavior sections to both `include_glob` and `exclude_glob` field documentation
+- Enhanced `collect_files` function documentation with examples showing relative path conversion
+- Added consistency notes and historical context about the fix
+- Included prominent documentation in the main `search_files` function about the unified behavior
+- Added detailed inline comments in the implementation explaining the relative path conversion logic
+
 ### Fixed Documentation Style and SearchOptions Structure Compatibility
 
 Implemented fixes to address compatibility issues with the `SearchOptions` struct and improved documentation organization:
