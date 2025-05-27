@@ -264,7 +264,9 @@ let is_included = common::path_matches_any_glob(rel_path, include_patterns, opti
 - **Traverse module**: The `pattern` field in `TraverseOptions` already used relative paths consistently
 - **Traverse common module**: Functions like `traverse_with_callback` and `collect_files_with_excludes` already used relative paths for `exclude_glob`
 - **Updated documentation**: Enhanced Rustdoc comments across all modules to clearly document the unified relative path behavior
-- **Specification updates**: Updated `spec.md` to document the consistent behavior across all modules
+**Specification updates**: Updated `spec.md` to document the consistent behavior across all modules
+
+**Version Bump**: Bumped version from `0.1.15` to `0.1.16` in both `Cargo.toml` and `flake.nix` to reflect this significant consistency improvement and API enhancement.
 
 ### Fixed Documentation Style and SearchOptions Structure Compatibility
 
