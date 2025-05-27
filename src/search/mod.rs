@@ -193,13 +193,13 @@ pub struct SearchOptions {
     ///
     /// **Important**: Glob patterns are matched against paths that are relative to the search directory.
     /// To ensure patterns work correctly with directory hierarchies, follow these guidelines:
-    /// 
-    /// 1. To exclude files in a specific subdirectory at any level, use `**/dirname/**` 
+    ///
+    /// 1. To exclude files in a specific subdirectory at any level, use `**/dirname/**`
     ///    (not just `dirname/**`)
     /// 2. To exclude file extensions, use `**/*.ext` to exclude files with that extension anywhere
     /// 3. For nested directories, always prefix with `**/` to match at any level
-    /// 4. For files directly in the root directory (no subdirectories), you generally need 
-    ///    to filter the search results since glob patterns don't have a direct way to 
+    /// 4. For files directly in the root directory (no subdirectories), you generally need
+    ///    to filter the search results since glob patterns don't have a direct way to
     ///    match only root-level files
     ///
     /// # Examples
@@ -223,13 +223,13 @@ pub struct SearchOptions {
     ///
     /// **Important**: Glob patterns are matched against paths that are relative to the search directory.
     /// To ensure patterns work correctly with directory hierarchies, follow these guidelines:
-    /// 
-    /// 1. To match files in a specific subdirectory at any level, use `**/dirname/**` 
+    ///
+    /// 1. To match files in a specific subdirectory at any level, use `**/dirname/**`
     ///    (not just `dirname/**`)
     /// 2. To match file extensions, use `**/*.ext` to match files with that extension anywhere
     /// 3. For nested directories, always prefix with `**/` to match at any level
-    /// 4. For files directly in the root directory (no subdirectories), you generally need 
-    ///    to filter the search results since glob patterns don't have a direct way to 
+    /// 4. For files directly in the root directory (no subdirectories), you generally need
+    ///    to filter the search results since glob patterns don't have a direct way to
     ///    match only root-level files
     ///
     /// # Examples
@@ -1378,7 +1378,7 @@ pub fn search_files(
             } else {
                 file_path.clone()
             };
-    
+
             // For context lines, we don't need to apply omission logic
             if is_context {
                 result_lines.push(SearchResultLine {

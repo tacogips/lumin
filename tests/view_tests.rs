@@ -18,7 +18,10 @@ mod view_tests {
         let _env = TestEnvironment::setup()?;
 
         // Make sure we're actually creating the file in our test environment
-        std::fs::copy("tests/fixtures/text_files/config.toml", Path::new(TEST_DIR).join("config.toml"))?;
+        std::fs::copy(
+            "tests/fixtures/text_files/config.toml",
+            Path::new(TEST_DIR).join("config.toml"),
+        )?;
         let file_path = Path::new(TEST_DIR).join("config.toml");
         let options = ViewOptions::default();
 

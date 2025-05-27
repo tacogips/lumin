@@ -104,11 +104,11 @@ enum Commands {
         /// Maximum file size in bytes
         #[arg(long)]
         max_size: Option<usize>,
-        
+
         /// Start viewing from this line number (1-based, inclusive)
         #[arg(long)]
         line_from: Option<usize>,
-        
+
         /// End viewing at this line number (1-based, inclusive)
         #[arg(long)]
         line_to: Option<usize>,
@@ -138,7 +138,11 @@ fn main() -> Result<()> {
                 include_glob: None,
                 omit_path_prefix: None,
                 match_content_omit_num: *omit_context,
-                depth: if *max_depth == 0 { None } else { Some(*max_depth) },
+                depth: if *max_depth == 0 {
+                    None
+                } else {
+                    Some(*max_depth)
+                },
                 before_context: *before_context,
                 after_context: *after_context,
                 skip: None,
@@ -153,10 +157,10 @@ fn main() -> Result<()> {
                 // Count actual matches (not context lines)
                 let match_count = results.lines.iter().filter(|r| !r.is_context).count();
                 println!("Found {} matches:", match_count);
-                
+
                 let mut last_file = None;
                 let mut last_line_number = 0;
-                
+
                 for result in results.lines {
                     // Print separator between discontinuous results
                     if let Some(last) = &last_file {
@@ -164,11 +168,11 @@ fn main() -> Result<()> {
                             println!("--");
                         }
                     }
-                    
+
                     // Update tracking variables
                     last_file = Some(result.file_path.clone());
                     last_line_number = result.line_number;
-                    
+
                     // Print result with different formatting for matches vs context
                     if result.is_context {
                         // Context line (grey/dimmed if terminal supports it)
@@ -204,7 +208,11 @@ fn main() -> Result<()> {
                 respect_gitignore: !no_ignore,
                 only_text_files: !include_binary,
                 pattern: pattern.clone(),
-                depth: if *max_depth == 0 { None } else { Some(*max_depth) },
+                depth: if *max_depth == 0 {
+                    None
+                } else {
+                    Some(*max_depth)
+                },
                 omit_path_prefix: None,
             };
 
@@ -235,7 +243,11 @@ fn main() -> Result<()> {
             let options = TreeOptions {
                 case_sensitive: *case_sensitive,
                 respect_gitignore: !no_ignore,
-                depth: if *max_depth == 0 { None } else { Some(*max_depth) },
+                depth: if *max_depth == 0 {
+                    None
+                } else {
+                    Some(*max_depth)
+                },
                 omit_path_prefix: None,
             };
 
@@ -249,7 +261,12 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::View { file, max_size, line_from, line_to } => {
+        Commands::View {
+            file,
+            max_size,
+            line_from,
+            line_to,
+        } => {
             let options = ViewOptions {
                 max_size: *max_size,
                 line_from: *line_from,
@@ -257,21 +274,24 @@ fn main() -> Result<()> {
             };
 
             let view_result = view_file(file, &options)?;
-            
+
             // Format output as {filepath}:{line_num}:{line_contents}
             match view_result.contents {
                 FileContents::Text { content, .. } => {
                     let file_path = view_result.file_path.to_string_lossy();
                     for line_content in content.line_contents {
-                        println!("{file_path}:{}:{}", line_content.line_number, line_content.line);
+                        println!(
+                            "{file_path}:{}:{}",
+                            line_content.line_number, line_content.line
+                        );
                     }
-                },
+                }
                 FileContents::Binary { message, .. } => {
                     println!("{}: {}", view_result.file_path.to_string_lossy(), message);
-                },
+                }
                 FileContents::Image { message, .. } => {
                     println!("{}: {}", view_result.file_path.to_string_lossy(), message);
-                },
+                }
             }
         }
     }

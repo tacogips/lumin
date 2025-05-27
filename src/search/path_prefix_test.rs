@@ -28,7 +28,10 @@ mod tests {
         let options = SearchOptions::default();
         let results = search_files(pattern, temp_path, &options)?;
         assert_eq!(results.total_number, 1, "Should find one match");
-        assert_eq!(results.lines[0].file_path, file_path, "File path should be preserved as-is");
+        assert_eq!(
+            results.lines[0].file_path, file_path,
+            "File path should be preserved as-is"
+        );
 
         // Test case 2: With path prefix removal
         let mut options_with_prefix = SearchOptions::default();
@@ -43,12 +46,13 @@ mod tests {
 
         // Test case 3: With non-matching path prefix
         let mut options_with_nonmatching_prefix = SearchOptions::default();
-        options_with_nonmatching_prefix.omit_path_prefix = Some(PathBuf::from("/non/existing/path"));
-        let results_nonmatching = search_files(pattern, temp_path, &options_with_nonmatching_prefix)?;
+        options_with_nonmatching_prefix.omit_path_prefix =
+            Some(PathBuf::from("/non/existing/path"));
+        let results_nonmatching =
+            search_files(pattern, temp_path, &options_with_nonmatching_prefix)?;
         assert_eq!(results_nonmatching.total_number, 1, "Should find one match");
         assert_eq!(
-            results_nonmatching.lines[0].file_path, 
-            file_path, 
+            results_nonmatching.lines[0].file_path, file_path,
             "File path should be preserved when prefix doesn't match"
         );
 

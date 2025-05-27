@@ -33,7 +33,8 @@ mod search_tests {
         // Should not find anything in .hidden directory (respects gitignore)
         assert!(
             !results
-                .lines.iter()
+                .lines
+                .iter()
                 .any(|r| r.file_path.to_string_lossy().contains(".hidden"))
         );
 
@@ -103,7 +104,8 @@ mod search_tests {
         // Should NOT find the pattern in .hidden directory
         assert!(
             !results
-                .lines.iter()
+                .lines
+                .iter()
                 .any(|r| r.file_path.to_string_lossy().contains(".hidden")),
             "Found .hidden files when respecting gitignore"
         );
@@ -127,7 +129,8 @@ mod search_tests {
         // Should find the pattern in .hidden directory
         assert!(
             results
-                .lines.iter()
+                .lines
+                .iter()
                 .any(|r| r.file_path.to_string_lossy().contains(".hidden")),
             "Did not find .hidden files when ignoring gitignore"
         );
@@ -169,8 +172,11 @@ mod search_tests {
 
         // None of the results should have trailing newlines
         for result in &results.lines {
-            assert!(!result.line_content.ends_with('\n'), 
-                   "line_content contains trailing newline: {:?}", result.line_content);
+            assert!(
+                !result.line_content.ends_with('\n'),
+                "line_content contains trailing newline: {:?}",
+                result.line_content
+            );
         }
 
         Ok(())
@@ -193,14 +199,17 @@ mod search_tests {
 
         // Should find matches
         assert!(!results.lines.is_empty());
-        
+
         // Should have some context lines
         assert!(results.lines.iter().any(|r| r.is_context));
 
         // None of the results (including context lines) should have trailing newlines
         for result in &results.lines {
-            assert!(!result.line_content.ends_with('\n'), 
-                   "line_content contains trailing newline: {:?}", result.line_content);
+            assert!(
+                !result.line_content.ends_with('\n'),
+                "line_content contains trailing newline: {:?}",
+                result.line_content
+            );
         }
 
         Ok(())

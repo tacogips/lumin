@@ -56,7 +56,10 @@ mod search_after_context_tests {
         let contexts: Vec<_> = results.lines.iter().filter(|r| r.is_context).collect();
 
         assert!(!matches.is_empty(), "Should have at least one match");
-        assert!(!contexts.is_empty(), "Should have at least one context line");
+        assert!(
+            !contexts.is_empty(),
+            "Should have at least one context line"
+        );
 
         // All non-context results should contain the search pattern
         for result in &matches {
@@ -69,14 +72,17 @@ mod search_after_context_tests {
             if !result.is_context {
                 // This is a match, check if it has context lines following it
                 let mut context_count: usize = 0;
-                for j in i+1..results.lines.len() {
+                for j in i + 1..results.lines.len() {
                     if !results.lines[j].is_context {
                         break; // Next match found
                     }
                     // Should be the same file
                     assert_eq!(results.lines[j].file_path, result.file_path);
                     // Should be consecutive line numbers
-                    assert_eq!(results.lines[j].line_number, result.line_number + context_count as u64 + 1);
+                    assert_eq!(
+                        results.lines[j].line_number,
+                        result.line_number + context_count as u64 + 1
+                    );
                     context_count += 1;
                     if context_count >= options.after_context {
                         break;
@@ -84,8 +90,9 @@ mod search_after_context_tests {
                 }
                 // Only verify exact context count if we're not at the end of the file
                 // and if this match doesn't immediately precede another match
-                if i + context_count + 1 < results.lines.len() && 
-                   results.lines[i + context_count + 1].is_context == false {
+                if i + context_count + 1 < results.lines.len()
+                    && results.lines[i + context_count + 1].is_context == false
+                {
                     assert_eq!(context_count, options.after_context);
                 }
             }
@@ -112,7 +119,7 @@ mod search_after_context_tests {
 
         // Create a mapping of file paths to line numbers with their is_context flag
         let mut file_lines = std::collections::HashMap::new();
-        
+
         for result in &results.lines {
             let entries = file_lines
                 .entry(result.file_path.clone())
@@ -128,7 +135,7 @@ mod search_after_context_tests {
 
             for i in 0..sorted_lines.len() {
                 let (line_num, is_context) = sorted_lines[i];
-                
+
                 // If this is a context line, check that it's properly attributed
                 if is_context {
                     // Find the match that this context line belongs to
@@ -143,7 +150,11 @@ mod search_after_context_tests {
                             }
                         }
                     }
-                    assert!(found_parent, "Context line {} has no matching parent", line_num);
+                    assert!(
+                        found_parent,
+                        "Context line {} has no matching parent",
+                        line_num
+                    );
                 }
             }
         }
@@ -172,21 +183,21 @@ mod search_after_context_tests {
                 // Found a match, check all following lines in the same file
                 let file_path = &result.file_path;
                 let line_num = result.line_number;
-                
+
                 // Count actual lines in the file after the match
                 let file_content = std::fs::read_to_string(file_path)?;
                 let file_lines: Vec<_> = file_content.lines().collect();
                 let expected_context_lines = file_lines.len() as u64 - line_num;
-                
+
                 // Count context lines in the results
                 let mut context_count = 0;
-                for j in i+1..results.lines.len() {
+                for j in i + 1..results.lines.len() {
                     if results.lines[j].file_path != *file_path || !results.lines[j].is_context {
                         break;
                     }
                     context_count += 1;
                 }
-                
+
                 // We should have all lines until the end of the file as context
                 assert_eq!(context_count as u64, expected_context_lines);
                 break;
@@ -217,14 +228,19 @@ mod search_after_context_tests {
         for result in &results.lines {
             if !result.is_context {
                 // This is a match - may have content omitted if the line is long enough
-                if result.line_content.len() > 20 + pattern.len() { // rough estimate
-                    assert!(result.content_omitted, 
-                        "Long match line should have content omitted");
+                if result.line_content.len() > 20 + pattern.len() {
+                    // rough estimate
+                    assert!(
+                        result.content_omitted,
+                        "Long match line should have content omitted"
+                    );
                 }
             } else {
                 // Context lines should never have content omitted
-                assert!(!result.content_omitted, 
-                        "Context lines should not have content omitted");
+                assert!(
+                    !result.content_omitted,
+                    "Context lines should not have content omitted"
+                );
             }
         }
 

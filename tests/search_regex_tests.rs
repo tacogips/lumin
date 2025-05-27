@@ -13,7 +13,12 @@ fn test_search_with_basic_literal_text() -> Result<()> {
     let results = search_files("apple", directory, &options)?;
 
     assert!(!results.lines.is_empty());
-    assert!(results.lines.iter().any(|r| r.line_content.contains("apple")));
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("apple"))
+    );
 
     Ok(())
 }
@@ -27,7 +32,12 @@ fn test_search_with_wildcard() -> Result<()> {
     let results = search_files("a..le", directory, &options)?;
 
     assert!(!results.lines.is_empty());
-    assert!(results.lines.iter().any(|r| r.line_content.contains("apple")));
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("apple"))
+    );
 
     Ok(())
 }
@@ -56,11 +66,17 @@ fn test_search_with_word_boundaries() -> Result<()> {
     let results = search_files("\\bword\\b", directory, &options)?;
 
     assert!(!results.lines.is_empty());
-    assert!(results.lines.iter().any(|r| r.line_content.contains("word")));
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("word"))
+    );
 
     // Count occurrences of exactly "word" (not as part of other words)
     let exact_matches = results
-        .lines.iter()
+        .lines
+        .iter()
         .filter(|r| r.line_content.contains("Words with boundaries: word"))
         .count();
 
@@ -118,8 +134,14 @@ fn test_search_with_alternation() -> Result<()> {
     assert!(!results.lines.is_empty());
 
     // Should match both words
-    let has_apple = results.lines.iter().any(|r| r.line_content.contains("apple"));
-    let has_orange = results.lines.iter().any(|r| r.line_content.contains("orange"));
+    let has_apple = results
+        .lines
+        .iter()
+        .any(|r| r.line_content.contains("apple"));
+    let has_orange = results
+        .lines
+        .iter()
+        .any(|r| r.line_content.contains("orange"));
 
     assert!(has_apple);
     assert!(has_orange);
@@ -154,8 +176,18 @@ fn test_search_with_plus_quantifier() -> Result<()> {
     assert!(!results.lines.is_empty());
 
     // Should find various matches with at least one 'a'
-    assert!(results.lines.iter().any(|r| r.line_content.contains("apple")));
-    assert!(results.lines.iter().any(|r| r.line_content.contains("banana")));
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("apple"))
+    );
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("banana"))
+    );
     assert!(results.lines.iter().any(|r| r.line_content.contains("aaa")));
 
     Ok(())
@@ -172,7 +204,12 @@ fn test_search_with_star_quantifier() -> Result<()> {
     assert!(!results.lines.is_empty());
 
     // Should find "abc" in "abc123"
-    assert!(results.lines.iter().any(|r| r.line_content.contains("abc123")));
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("abc123"))
+    );
 
     Ok(())
 }
@@ -191,12 +228,14 @@ fn test_search_email_pattern() -> Result<()> {
     // Should find the email addresses in the test file
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .any(|r| r.line_content.contains("user@example.com"))
     );
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .any(|r| r.line_content.contains("another.user@domain.co.uk"))
     );
 
@@ -216,7 +255,8 @@ fn test_search_with_escaping() -> Result<()> {
     // Should find the line with the literal .* in it
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .any(|r| r.line_content.contains("Special characters: .*"))
     );
 
@@ -235,7 +275,8 @@ fn test_search_with_word_followed_by() -> Result<()> {
 
     // Should find "prefixABC" but not "prefixDEF"
     let matches: Vec<_> = results
-        .lines.iter()
+        .lines
+        .iter()
         .filter(|r| r.line_content.contains("prefixABC"))
         .collect();
 
@@ -256,7 +297,8 @@ fn test_search_alternate_word_pattern() -> Result<()> {
 
     // Should find "prefixDEF" but not "prefixABC"
     let matches: Vec<_> = results
-        .lines.iter()
+        .lines
+        .iter()
         .filter(|r| r.line_content.contains("prefixDEF"))
         .collect();
 
@@ -278,7 +320,8 @@ fn test_search_with_non_greedy_matching() -> Result<()> {
     // Should find the full line with "Basic text: apple orange banana"
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .any(|r| r.line_content.contains("Basic text: apple orange banana"))
     );
 
@@ -312,9 +355,24 @@ fn test_search_with_capture_groups() -> Result<()> {
     assert!(!results.lines.is_empty());
 
     // Should find both "(group1)" and "(inner)" and "(123)"
-    assert!(results.lines.iter().any(|r| r.line_content.contains("(group1)")));
-    assert!(results.lines.iter().any(|r| r.line_content.contains("(inner)")));
-    assert!(results.lines.iter().any(|r| r.line_content.contains("(123)")));
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("(group1)"))
+    );
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("(inner)"))
+    );
+    assert!(
+        results
+            .lines
+            .iter()
+            .any(|r| r.line_content.contains("(123)"))
+    );
 
     Ok(())
 }

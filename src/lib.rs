@@ -11,6 +11,8 @@
 //!
 //! Lumin uses structured logging via env_logger with stderr output for console visibility.
 
+/// Path manipulation utilities
+pub mod paths;
 /// File content searching functionality using regex patterns
 pub mod search;
 /// Directory traversal and file listing functionality
@@ -19,8 +21,6 @@ pub mod traverse;
 pub mod tree;
 /// File content viewing with type detection and formatting
 pub mod view;
-/// Path manipulation utilities
-pub mod paths;
 
 /// Telemetry and logging configuration
 pub mod telemetry;

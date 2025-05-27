@@ -1,7 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[cfg(test)]
 mod path_prefix_test;
@@ -19,10 +19,10 @@ pub struct TreeOptions {
 
     /// Whether to respect .gitignore files when determining which files to include
     pub respect_gitignore: bool,
-    
+
     /// Maximum depth of directory traversal (number of directory levels to explore)
     pub depth: Option<usize>,
-    
+
     /// Optional path prefix to remove from directory paths in tree results.
     ///
     /// When set to `Some(path)`, this prefix will be removed from the beginning of each directory path in the results.
@@ -37,7 +37,7 @@ pub struct TreeOptions {
     /// - `omit_path_prefix: Some(PathBuf::from("/home/user/projects/myrepo"))` will transform a directory path like
     ///   `/home/user/projects/myrepo/src/util` to `src/util` in the results
     /// - `omit_path_prefix: None` will leave all directory paths unchanged
-    pub omit_path_prefix: Option<std::path::PathBuf>,
+    pub omit_path_prefix: Option<PathBuf>,
 }
 
 impl Default for TreeOptions {
@@ -88,7 +88,12 @@ pub struct DirectoryTree {
 /// Returns an error if there's an issue accessing the directory or files
 pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<DirectoryTree>> {
     // Use the common builder setup from traverse module
-    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive, options.depth)?;
+    let walker = build_walk(
+        directory,
+        options.respect_gitignore,
+        options.case_sensitive,
+        options.depth,
+    )?;
 
     // Map to organize entries by directory
     let mut dirs_map: HashMap<String, Vec<Entry>> = HashMap::new();
@@ -100,7 +105,7 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
     } else {
         directory.to_path_buf()
     };
-    
+
     // Add the root directory as the first entry
     let root_dir_key = root_dir_path.to_string_lossy().to_string();
     dirs_map.insert(root_dir_key.clone(), Vec::new());
@@ -189,7 +194,7 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
                         parent.to_path_buf()
                     }
                 };
-                
+
                 let parent_key = processed_parent.to_string_lossy().to_string();
 
                 // Make sure the parent directory exists in our map
@@ -239,7 +244,7 @@ pub fn generate_tree(directory: &Path, options: &TreeOptions) -> Result<Vec<Dire
         } else {
             directory.to_path_buf()
         };
-        
+
         result.push(DirectoryTree {
             dir: root_dir_path.to_string_lossy().to_string(),
             entries: vec![Entry::Directory {

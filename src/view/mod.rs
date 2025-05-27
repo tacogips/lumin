@@ -87,12 +87,12 @@ impl TextContent {
     pub fn contains(&self, s: &str) -> bool {
         self.line_contents.iter().any(|line| line.line.contains(s))
     }
-    
+
     /// Check if the content is empty
     pub fn is_empty(&self) -> bool {
         self.line_contents.is_empty()
     }
-    
+
     /// Convert the content to lowercase
     pub fn to_lowercase(&self) -> String {
         self.line_contents
@@ -101,7 +101,7 @@ impl TextContent {
             .collect::<Vec<_>>()
             .join("\n")
     }
-    
+
     /// Convert the content to a string
     pub fn to_string(&self) -> String {
         self.line_contents
@@ -219,7 +219,7 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
     // When line filters are applied, we'll only process a subset of the file,
     // so we skip the initial size check and validate the filtered content size later
     let using_line_filters = options.line_from.is_some() || options.line_to.is_some();
-    
+
     if let Some(max_size) = options.max_size {
         if !using_line_filters && metadata.len() > max_size as u64 {
             return Err(anyhow!(
@@ -307,14 +307,15 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
                 // Apply line filtering if requested, silently adjusting for boundaries
                 let from_line = options.line_from.unwrap_or(1).max(1);
                 let to_line = options.line_to.unwrap_or(line_count).min(line_count);
-                
+
                 // If from_line is beyond file content or greater than to_line, adjust silently
-                let (effective_from, effective_to) = if from_line > line_count || from_line > to_line {
-                    // If range is completely invalid, return empty content
-                    (1, 0) // This will create an empty collection as from > to
-                } else {
-                    (from_line, to_line)
-                };
+                let (effective_from, effective_to) =
+                    if from_line > line_count || from_line > to_line {
+                        // If range is completely invalid, return empty content
+                        (1, 0) // This will create an empty collection as from > to
+                    } else {
+                        (from_line, to_line)
+                    };
 
                 // Create line contents with line numbers and filtered text
                 let line_contents = all_lines
@@ -332,16 +333,18 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
 
                 // Create structured text content
                 let content = TextContent { line_contents };
-                
+
                 // If we're using line filters and have a max size, check the filtered content size
                 if using_line_filters && options.max_size.is_some() {
                     let max_size = options.max_size.unwrap();
                     // Estimate the size of filtered content by summing up the lengths of included lines
                     // Also account for newline characters (\n) that would be present when reconstructing the content
-                    let filtered_size = content.line_contents.iter()
+                    let filtered_size = content
+                        .line_contents
+                        .iter()
                         .map(|line| line.line.len() + 1) // +1 for the newline character
                         .sum::<usize>();
-                    
+
                     if filtered_size > max_size {
                         return Err(anyhow!(
                             "Filtered content is too large: {} (filtered size: {}, limit: {})",
@@ -351,7 +354,7 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
                         ));
                     }
                 }
-                
+
                 FileContents::Text {
                     content,
                     metadata: TextMetadata {
@@ -386,7 +389,7 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
                 ));
             }
         }
-        
+
         FileContents::Image {
             message: format!("Image file detected: {}", file_type),
             metadata: ImageMetadata {
@@ -409,7 +412,7 @@ pub fn view_file(path: &Path, options: &ViewOptions) -> Result<FileView> {
                 ));
             }
         }
-        
+
         FileContents::Binary {
             message: format!(
                 "Binary file detected, size: {} bytes, type: {}",

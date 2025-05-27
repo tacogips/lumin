@@ -85,7 +85,7 @@ Random UUID: 123e4567-e89b-12d3-a456-426614174000
 "#,
         )?;
 
-        // Lookarounds test file  
+        // Lookarounds test file
         create_test_file(
             &test_files[1],
             r#"Regex lookaround pattern test file
@@ -203,9 +203,16 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
+                !results.lines.is_empty(),
+                "No results for pattern: {}",
+                pattern
+            );
+            assert!(
+                results
+                    .lines
+                    .iter()
+                    .any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -240,9 +247,16 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
+                !results.lines.is_empty(),
+                "No results for pattern: {}",
+                pattern
+            );
+            assert!(
+                results
+                    .lines
+                    .iter()
+                    .any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -276,9 +290,16 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
+                !results.lines.is_empty(),
+                "No results for pattern: {}",
+                pattern
+            );
+            assert!(
+                results
+                    .lines
+                    .iter()
+                    .any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -309,9 +330,16 @@ RGBA color: rgba(255, 99, 71, 0.5);
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
+                !results.lines.is_empty(),
+                "No results for pattern: {}",
+                pattern
+            );
+            assert!(
+                results
+                    .lines
+                    .iter()
+                    .any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -337,14 +365,24 @@ RGBA color: rgba(255, 99, 71, 0.5);
             (r#"color|colour"#, "Optional char: color and colour"),
             (r#"(RGB|RGBA) color"#, "RGB color: rgb(255, 99, 71);"),
             (r#"v[0-9.]+(-[a-z]+)?"#, "Version string: v1.2.3-beta"),
-            (r#"(api|www)\.example\.(com|org)"#, "https://www.example.com"),
+            (
+                r#"(api|www)\.example\.(com|org)"#,
+                "https://www.example.com",
+            ),
         ];
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
+                !results.lines.is_empty(),
+                "No results for pattern: {}",
+                pattern
+            );
+            assert!(
+                results
+                    .lines
+                    .iter()
+                    .any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern
@@ -370,35 +408,44 @@ RGBA color: rgba(255, 99, 71, 0.5);
         // Test practical real-world patterns
         let patterns_and_expected = [
             // Email pattern
-            (r#"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"#, "user@example.com"),
-            
+            (
+                r#"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"#,
+                "user@example.com",
+            ),
             // URL pattern
-            (r#"https?://[\w.-]+\.[a-zA-Z]{2,}(?:/[\w.-]*)*"#, "https://www.example.com"),
-            
+            (
+                r#"https?://[\w.-]+\.[a-zA-Z]{2,}(?:/[\w.-]*)*"#,
+                "https://www.example.com",
+            ),
             // IP address pattern
             (r#"\b(?:\d{1,3}\.){3}\d{1,3}\b"#, "IPv4: 192.168.1.1"),
-            
             // Function definition pattern
-            (r#"fn\s+\w+\s*\([^)]*\)"#, "fn calculate_sum(a: i32, b: i32)"),
-            
+            (
+                r#"fn\s+\w+\s*\([^)]*\)"#,
+                "fn calculate_sum(a: i32, b: i32)",
+            ),
             // Markdown heading pattern
             (r#"^#{1,6}\s+.*"#, "# Heading 1"),
-            
             // JSON key-value pattern
             (r#""([\w.-]+)"\s*:\s*"([^"]*)""#, "\"name\": \"John Doe\""),
-            
             // CSS color code pattern
             (r#"#[a-fA-F0-9]{3,6}"#, "Background: #fff;"),
-            
             // ISO date pattern
             (r#"\d{4}-\d{2}-\d{2}"#, "ISO date: 2023-05-15"),
         ];
 
         for (pattern, expected_match) in patterns_and_expected {
             let results = search_files(pattern, directory, &options)?;
-            assert!(!results.lines.is_empty(), "No results for pattern: {}", pattern);
             assert!(
-                results.lines.iter().any(|r| r.line_content.contains(expected_match)),
+                !results.lines.is_empty(),
+                "No results for pattern: {}",
+                pattern
+            );
+            assert!(
+                results
+                    .lines
+                    .iter()
+                    .any(|r| r.line_content.contains(expected_match)),
                 "Failed to find '{}' with pattern: {}",
                 expected_match,
                 pattern

@@ -283,24 +283,24 @@ mod traverse_glob_tests {
 
         // Let's create a test file with a letter after "level"
         let test_file_path = PathBuf::from("tests/fixtures/nested/levelA.txt");
-        
+
         // Make sure the parent directory exists
         if !test_file_path.parent().unwrap().exists() {
             fs::create_dir_all(test_file_path.parent().unwrap())?;
         }
-        
+
         // Create the test file
         let write_result = std::fs::write(
             &test_file_path,
-            "This is a test file with letter after level."
+            "This is a test file with letter after level.",
         );
-        
+
         // Skip test if file creation fails
         if write_result.is_err() {
             println!("Skipping letter character class test - could not create test file");
             return Ok(());
         }
-        
+
         // Ensure we clean up afterward
         defer::defer(|| {
             let _ = std::fs::remove_file(&test_file_path);
@@ -309,8 +309,11 @@ mod traverse_glob_tests {
         // Verify the test file exists using basic directory listing
         let basic_options = TraverseOptions::default();
         let check_results = traverse_directory(directory, &basic_options)?;
-        
-        if !check_results.iter().any(|r| r.file_path.to_string_lossy().contains("levelA.txt")) {
+
+        if !check_results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("levelA.txt"))
+        {
             println!("Skipping letter character class test - test file not found in listing");
             return Ok(());
         }
@@ -324,7 +327,10 @@ mod traverse_glob_tests {
         let results = traverse_directory(directory, &options)?;
 
         // Should find levelA.txt
-        assert!(!results.is_empty(), "Should find files with letter character class");
+        assert!(
+            !results.is_empty(),
+            "Should find files with letter character class"
+        );
         assert!(
             results
                 .iter()
@@ -353,23 +359,23 @@ mod traverse_glob_tests {
 
         // Let's create a test file with a letter after "level"
         let test_file_path = PathBuf::from("tests/fixtures/nested/levelA.txt");
-        
+
         // Make sure the parent directory exists
         if !test_file_path.parent().unwrap().exists() {
             fs::create_dir_all(test_file_path.parent().unwrap())?;
         }
-        
+
         // Create the test file
         let write_result = std::fs::write(
             &test_file_path,
-            "This is a test file with letter after level."
+            "This is a test file with letter after level.",
         );
-        
+
         // Cleanup function even if we skip the test
         defer::defer(|| {
             let _ = std::fs::remove_file(&test_file_path);
         });
-        
+
         // Skip test if file creation fails
         if write_result.is_err() {
             println!("Skipping combined character class test - could not create test file");
@@ -379,15 +385,24 @@ mod traverse_glob_tests {
         // Verify the test file and digit files exist using basic directory listing
         let basic_options = TraverseOptions::default();
         let check_results = traverse_directory(directory, &basic_options)?;
-        
-        let has_level_a = check_results.iter().any(|r| r.file_path.to_string_lossy().contains("levelA.txt"));
-        let has_level_1 = check_results.iter().any(|r| r.file_path.to_string_lossy().contains("level1.txt"));
-        let has_level_2 = check_results.iter().any(|r| r.file_path.to_string_lossy().contains("level2.txt"));
-        
+
+        let has_level_a = check_results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("levelA.txt"));
+        let has_level_1 = check_results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("level1.txt"));
+        let has_level_2 = check_results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("level2.txt"));
+
         // Skip if we don't have the necessary files
         if !has_level_a || !has_level_1 || !has_level_2 {
             println!("Skipping combined character class test - missing required test files");
-            println!("  levelA.txt: {}, level1.txt: {}, level2.txt: {}", has_level_a, has_level_1, has_level_2);
+            println!(
+                "  levelA.txt: {}, level1.txt: {}, level2.txt: {}",
+                has_level_a, has_level_1, has_level_2
+            );
             return Ok(());
         }
 
@@ -400,18 +415,33 @@ mod traverse_glob_tests {
         let results = traverse_directory(directory, &options)?;
 
         // Check if each file is found (more tolerant than requiring at least 3)
-        let found_a = results.iter().any(|r| r.file_path.to_string_lossy().contains("levelA.txt"));
-        let found_1 = results.iter().any(|r| r.file_path.to_string_lossy().contains("level1.txt"));
-        let found_2 = results.iter().any(|r| r.file_path.to_string_lossy().contains("level2.txt"));
-        
+        let found_a = results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("levelA.txt"));
+        let found_1 = results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("level1.txt"));
+        let found_2 = results
+            .iter()
+            .any(|r| r.file_path.to_string_lossy().contains("level2.txt"));
+
         // We should find at least 1 file
-        assert!(!results.is_empty(), "Should find files with combined character class");
-        
+        assert!(
+            !results.is_empty(),
+            "Should find files with combined character class"
+        );
+
         // Print which files were found/not found
-        println!("Found levelA.txt: {}, level1.txt: {}, level2.txt: {}", found_a, found_1, found_2);
-        
+        println!(
+            "Found levelA.txt: {}, level1.txt: {}, level2.txt: {}",
+            found_a, found_1, found_2
+        );
+
         // As long as we find one of them, the test is successful (more tolerant approach)
-        assert!(found_a || found_1 || found_2, "Should find at least one of the test files");
+        assert!(
+            found_a || found_1 || found_2,
+            "Should find at least one of the test files"
+        );
 
         Ok(())
     }
@@ -1013,11 +1043,13 @@ mod traverse_glob_tests {
                 .iter()
                 .any(|r| r.file_path.to_string_lossy().contains("deep-1.txt"))
         );
-        
+
         // These assertions cause problems in some environments - removed
         // Check that no results contain .toml extension (safer than specific filename)
         assert!(
-            !results.iter().any(|r| r.file_path.to_string_lossy().ends_with(".toml")),
+            !results
+                .iter()
+                .any(|r| r.file_path.to_string_lossy().ends_with(".toml")),
             "Should not match .toml files"
         );
 
@@ -1287,13 +1319,16 @@ mod traverse_glob_tests {
         };
 
         let results = traverse_directory(directory, &options)?;
-        assert!(!results.is_empty(), "Should find files in boundary directory");
-        
+        assert!(
+            !results.is_empty(),
+            "Should find files in boundary directory"
+        );
+
         // Check if ".txt" file was created successfully
         let file_exists = results
             .iter()
             .any(|r| r.file_path.file_name().unwrap().to_string_lossy() == ".txt");
-            
+
         if file_exists {
             // Now try with the specific pattern
             let options = TraverseOptions {
@@ -1403,17 +1438,21 @@ mod traverse_glob_tests {
         };
 
         let results = traverse_directory(directory, &options)?;
-        
+
         // Count how many special files we have
-        let special_files = results.iter()
+        let special_files = results
+            .iter()
             .filter(|r| {
                 let name = r.file_path.file_name().unwrap().to_string_lossy();
                 name.starts_with(".") || name.starts_with("!") || name.contains("カタカナ")
             })
             .count();
-            
-        println!("Found {} special files in boundary directory", special_files);
-        
+
+        println!(
+            "Found {} special files in boundary directory",
+            special_files
+        );
+
         // Skip this part if we don't have enough special files
         if special_files >= 2 {
             // Test edge case: match all files with non-standard naming
@@ -1429,7 +1468,7 @@ mod traverse_glob_tests {
                 !results.is_empty(),
                 "Should match files with non-standard naming"
             );
-            
+
             println!("Matched {} files with non-standard naming", results.len());
         } else {
             println!("Skipping non-standard naming test - not enough special files created");

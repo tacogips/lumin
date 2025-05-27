@@ -102,7 +102,8 @@ fn test_multi_level_search() -> Result<()> {
     // Verify pattern was found in files at different nesting levels
     assert!(!search_results.lines.is_empty());
     let search_paths: Vec<_> = search_results
-        .lines.iter()
+        .lines
+        .iter()
         .map(|r| r.file_path.to_string_lossy().to_string())
         .collect();
 

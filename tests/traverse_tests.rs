@@ -282,7 +282,7 @@ mod traverse_tests {
 
         Ok(())
     }
-    
+
     /// Test traversal with prefix pattern matching
     #[test]
     #[serial]
@@ -320,11 +320,27 @@ mod traverse_tests {
         let results = traverse_directory(Path::new(TEST_DIR), &options)?;
 
         // Should only match prefix files at the root level
-        assert_eq!(results.len(), 2, "Should match exactly 2 files at the root level");
+        assert_eq!(
+            results.len(),
+            2,
+            "Should match exactly 2 files at the root level"
+        );
 
-        assert!(results.iter().any(|r| r.file_path.to_string_lossy().ends_with("test_prefix_file1.txt")));
-        assert!(results.iter().any(|r| r.file_path.to_string_lossy().ends_with("test_prefix_file2.md")));
-        assert!(!results.iter().any(|r| r.file_path.to_string_lossy().contains("docs/test_prefix_file3.txt")));
+        assert!(results.iter().any(|r| {
+            r.file_path
+                .to_string_lossy()
+                .ends_with("test_prefix_file1.txt")
+        }));
+        assert!(results.iter().any(|r| {
+            r.file_path
+                .to_string_lossy()
+                .ends_with("test_prefix_file2.md")
+        }));
+        assert!(!results.iter().any(|r| {
+            r.file_path
+                .to_string_lossy()
+                .contains("docs/test_prefix_file3.txt")
+        }));
 
         // Test recursive prefix matching
         let mut options = TraverseOptions::default();
@@ -333,9 +349,17 @@ mod traverse_tests {
         let results = traverse_directory(Path::new(TEST_DIR), &options)?;
 
         // Should match all 3 prefix files in any directory
-        assert_eq!(results.len(), 3, "Should match all 3 files with the prefix in any directory");
-        
-        assert!(results.iter().any(|r| r.file_path.to_string_lossy().contains("docs/test_prefix_file3.txt")));
+        assert_eq!(
+            results.len(),
+            3,
+            "Should match all 3 files with the prefix in any directory"
+        );
+
+        assert!(results.iter().any(|r| {
+            r.file_path
+                .to_string_lossy()
+                .contains("docs/test_prefix_file3.txt")
+        }));
 
         Ok(())
     }

@@ -57,7 +57,10 @@ mod search_before_context_tests {
         let contexts: Vec<_> = results.lines.iter().filter(|r| r.is_context).collect();
 
         assert!(!matches.is_empty(), "Should have at least one match");
-        assert!(!contexts.is_empty(), "Should have at least one context line");
+        assert!(
+            !contexts.is_empty(),
+            "Should have at least one context line"
+        );
 
         // All non-context results should contain the search pattern
         for result in &matches {
@@ -78,7 +81,8 @@ mod search_before_context_tests {
                     // Should be the same file
                     assert_eq!(results.lines[j].file_path, result.file_path);
                     // Should be consecutive line numbers (result line number should be greater than context line number)
-                    let expected_line_num = result.line_number.saturating_sub(context_count as u64 + 1);
+                    let expected_line_num =
+                        result.line_number.saturating_sub(context_count as u64 + 1);
                     assert_eq!(results.lines[j].line_number, expected_line_num);
                     context_count += 1;
                     if context_count >= options.before_context {
@@ -88,14 +92,16 @@ mod search_before_context_tests {
                 // Only verify exact context count if we have enough lines before this match
                 // and if there are no other matches immediately before this one
                 // Check if there are enough results before this one and make sure we don't overflow
-                if i >= context_count && 
-                   (context_count == 0 || 
-                    (i > context_count + 1 && !results.lines[i - context_count - 1].is_context)) {
+                if i >= context_count
+                    && (context_count == 0
+                        || (i > context_count + 1
+                            && !results.lines[i - context_count - 1].is_context))
+                {
                     // If match is not at the start of the file, we should have the full context
                     let file_content = std::fs::read_to_string(&result.file_path)?;
                     let _file_lines: Vec<_> = file_content.lines().collect();
                     let match_line_index = (result.line_number - 1) as usize; // Convert to 0-based index
-                    
+
                     // If the match is not near the beginning of the file, we should have full context
                     if match_line_index >= options.before_context {
                         assert_eq!(context_count, options.before_context);
@@ -128,7 +134,7 @@ mod search_before_context_tests {
 
         // Create a mapping of file paths to line numbers with their is_context flag
         let mut file_lines = std::collections::HashMap::new();
-        
+
         for result in &results.lines {
             let entries = file_lines
                 .entry(result.file_path.clone())
@@ -144,12 +150,12 @@ mod search_before_context_tests {
 
             for i in 0..sorted_lines.len() {
                 let (line_num, is_context) = sorted_lines[i];
-                
+
                 // If this is a context line, check that it's properly attributed
                 if is_context {
                     // Find the match that this context line belongs to
                     let mut found_parent = false;
-                    for j in i+1..sorted_lines.len() {
+                    for j in i + 1..sorted_lines.len() {
                         let (parent_line, parent_is_context) = sorted_lines[j];
                         if !parent_is_context {
                             // This is a match, check if our context line is within range
@@ -159,7 +165,11 @@ mod search_before_context_tests {
                             }
                         }
                     }
-                    assert!(found_parent, "Context line {} has no matching parent", line_num);
+                    assert!(
+                        found_parent,
+                        "Context line {} has no matching parent",
+                        line_num
+                    );
                 }
             }
         }
@@ -191,15 +201,19 @@ mod search_before_context_tests {
                 // Count context lines in the results preceding this match
                 let mut context_count = 0;
                 for j in (0..i).rev() {
-                    if results.lines[j].file_path != result.file_path || !results.lines[j].is_context {
+                    if results.lines[j].file_path != result.file_path
+                        || !results.lines[j].is_context
+                    {
                         break;
                     }
                     context_count += 1;
                 }
-                
+
                 // We should have all lines from the start of the file as context
-                assert_eq!(context_count as u64, expected_context_lines, 
-                           "Should include all lines from file start to match");
+                assert_eq!(
+                    context_count as u64, expected_context_lines,
+                    "Should include all lines from file start to match"
+                );
                 break;
             }
         }
@@ -228,14 +242,19 @@ mod search_before_context_tests {
         for result in &results.lines {
             if !result.is_context {
                 // This is a match - may have content omitted if the line is long enough
-                if result.line_content.len() > 20 + pattern.len() { // rough estimate
-                    assert!(result.content_omitted, 
-                        "Long match line should have content omitted");
+                if result.line_content.len() > 20 + pattern.len() {
+                    // rough estimate
+                    assert!(
+                        result.content_omitted,
+                        "Long match line should have content omitted"
+                    );
                 }
             } else {
                 // Context lines should never have content omitted
-                assert!(!result.content_omitted, 
-                        "Context lines should not have content omitted");
+                assert!(
+                    !result.content_omitted,
+                    "Context lines should not have content omitted"
+                );
             }
         }
 

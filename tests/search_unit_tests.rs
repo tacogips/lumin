@@ -28,13 +28,16 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
     // Now there are more matches with our new test files
     // Just verify that we found the key matches
     let found_sample = results
-        .lines.iter()
+        .lines
+        .iter()
         .any(|r| r.file_path.to_string_lossy().contains("sample.txt"));
     let found_markdown = results
-        .lines.iter()
+        .lines
+        .iter()
         .any(|r| r.file_path.to_string_lossy().contains("markdown.md"));
     let found_file_rs = results
-        .lines.iter()
+        .lines
+        .iter()
         .any(|r| r.file_path.to_string_lossy().contains("file.rs"));
 
     assert!(found_sample, "Should find PATTERN in sample.txt");
@@ -43,7 +46,8 @@ fn test_search_pattern_case_sensitive() -> Result<()> {
 
     // Verify matches found in expected files
     let file_paths: Vec<String> = results
-        .lines.iter()
+        .lines
+        .iter()
         .map(|r| r.file_path.to_string_lossy().to_string())
         .collect();
 
@@ -80,7 +84,8 @@ fn test_search_pattern_case_insensitive() -> Result<()> {
 
     // Verify matches found in expected files
     let file_paths: Vec<String> = results
-        .lines.iter()
+        .lines
+        .iter()
         .map(|r| r.file_path.to_string_lossy().to_string())
         .collect();
 
@@ -117,17 +122,20 @@ fn test_search_with_gitignore_respect() -> Result<()> {
     // Should not find matches in .hidden/secret.txt, temp.tmp or log.log
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .all(|r| !r.file_path.to_string_lossy().contains(".hidden"))
     );
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .all(|r| !r.file_path.to_string_lossy().ends_with(".tmp"))
     );
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .all(|r| !r.file_path.to_string_lossy().ends_with(".log"))
     );
 
@@ -160,7 +168,8 @@ fn test_search_without_gitignore_respect() -> Result<()> {
     assert!(!results.lines.is_empty());
     assert!(
         results
-            .lines.iter()
+            .lines
+            .iter()
             .any(|r| r.file_path.to_string_lossy().ends_with(".tmp")
                 || r.file_path.to_string_lossy().ends_with(".log"))
     );

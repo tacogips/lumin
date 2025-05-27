@@ -40,7 +40,7 @@ use std::path::{Path, PathBuf};
 pub fn remove_path_prefix<P: AsRef<Path>, Q: AsRef<Path>>(path: P, prefix: Q) -> PathBuf {
     let path = path.as_ref();
     let prefix = prefix.as_ref();
-    
+
     // Try to strip the prefix using the standard library function
     match path.strip_prefix(prefix) {
         Ok(stripped) => stripped.to_path_buf(),

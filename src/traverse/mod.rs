@@ -102,7 +102,6 @@
 /// - Substring matching respects the `case_sensitive` option
 ///
 /// For more examples and detailed usage patterns, see the `traverse_directory` function.
-
 use anyhow::Result;
 use globset::{GlobBuilder, GlobSetBuilder};
 use infer::Infer;
@@ -112,7 +111,7 @@ use std::path::{Path, PathBuf};
 // Common utilities for traverse and tree operations
 pub mod common;
 use crate::paths::remove_path_prefix;
-use crate::telemetry::{log_with_context, LogMessage};
+use crate::telemetry::{LogMessage, log_with_context};
 use common::{build_walk, is_hidden_path};
 
 /// Configuration options for directory traversal operations.
@@ -148,7 +147,7 @@ use common::{build_walk, is_hidden_path};
 ///     depth: None,
 ///     omit_path_prefix: None,
 /// };
-/// 
+///
 /// // With path prefix removal to show relative paths
 /// let prefix_options = TraverseOptions {
 ///     case_sensitive: false,
@@ -283,7 +282,7 @@ pub struct TraverseOptions {
     /// ## Substring Pattern Examples
     ///
     /// When a pattern doesn't contain glob special characters, it's treated as a simple substring match:
-    /// 
+    ///
     /// - `config` - Any file with "config" in its path (e.g., "config.toml", "app_config.json")
     /// - `test` - Any file with "test" in its path (e.g., "test_data.txt", "tests/example.rs")
     /// - `README` - Any file with "README" in its path, case-sensitive if enabled
@@ -309,7 +308,7 @@ pub struct TraverseOptions {
     /// - With `depth: Some(5)`, the traversal will go up to 5 levels deep
     /// - With `depth: None`, all subdirectories will be explored regardless of depth
     pub depth: Option<usize>,
-    
+
     /// Optional path prefix to remove from file paths in traversal results.
     ///
     /// When set to `Some(path)`, this prefix will be removed from the beginning of each file path in the results.
@@ -558,7 +557,7 @@ impl TraverseResult {
 ///     }
 /// ).unwrap();
 /// ```
-/// 
+///
 /// ### Controlling Directory Traversal Depth
 /// ```no_run
 /// use lumin::traverse::{TraverseOptions, traverse_directory};
@@ -625,7 +624,7 @@ impl TraverseResult {
 ///         ..TraverseOptions::default()
 ///     }
 /// ).unwrap();
-/// 
+///
 /// // Find files with path prefix removal (to show relative paths in results)
 /// let path_prefix_options = traverse_directory(
 ///     Path::new("/home/user/project"),
@@ -644,7 +643,12 @@ pub fn traverse_directory(
     let infer = Infer::new();
 
     // Use the common walker builder
-    let walker = build_walk(directory, options.respect_gitignore, options.case_sensitive, options.depth)?;
+    let walker = build_walk(
+        directory,
+        options.respect_gitignore,
+        options.case_sensitive,
+        options.depth,
+    )?;
 
     // Set up pattern matching if pattern provided
     let pattern_matcher = if let Some(pattern) = &options.pattern {
@@ -732,7 +736,7 @@ pub fn traverse_directory(
                         } else {
                             "unknown".to_string()
                         };
-                        
+
                         // Apply path prefix removal if configured
                         let processed_path = if let Some(prefix) = &options.omit_path_prefix {
                             remove_path_prefix(&path.to_path_buf(), prefix)
@@ -753,9 +757,7 @@ pub fn traverse_directory(
                     LogMessage {
                         message: format!("Error walking directory: {}", err),
                         module: "traverse",
-                        context: Some(vec![
-                            ("directory", directory.display().to_string()),
-                        ]),
+                        context: Some(vec![("directory", directory.display().to_string())]),
                     },
                 );
             }
@@ -811,13 +813,17 @@ mod tests {
         for result in &results {
             // Paths should not start with the temp directory
             assert!(!result.file_path.starts_with(temp_path));
-            
+
             // Check that each file exists in our test files array (after normalization)
             let normalized_path = result.file_path.to_string_lossy().to_string();
-            let found = test_files.iter().any(|f| {
-                normalized_path == *f || normalized_path.replace("\\", "/") == *f
-            });
-            assert!(found, "File path {} not found in test files", normalized_path);
+            let found = test_files
+                .iter()
+                .any(|f| normalized_path == *f || normalized_path.replace("\\", "/") == *f);
+            assert!(
+                found,
+                "File path {} not found in test files",
+                normalized_path
+            );
         }
 
         // Test without path prefix removal
