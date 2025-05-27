@@ -191,7 +191,17 @@ pub struct SearchOptions {
     /// When provided, files matching any of these patterns will be excluded from the search,
     /// even if they would otherwise be included based on other criteria.
     ///
-    /// **Important**: Glob patterns are matched against paths that are relative to the search directory.
+    /// ## Path Matching Behavior
+    ///
+    /// **Important**: Glob patterns are matched against paths that are **relative to the search directory**.
+    /// This ensures consistent behavior with `include_glob` and makes patterns predictable.
+    ///
+    /// For example, when searching in `/home/user/project`:
+    /// - A file at `/home/user/project/src/main.rs` is matched against the relative path `src/main.rs`
+    /// - A file at `/home/user/project/tests/mod.rs` is matched against the relative path `tests/mod.rs`
+    ///
+    /// ## Pattern Guidelines
+    ///
     /// To ensure patterns work correctly with directory hierarchies, follow these guidelines:
     ///
     /// 1. To exclude files in a specific subdirectory at any level, use `**/dirname/**`
@@ -202,14 +212,20 @@ pub struct SearchOptions {
     ///    to filter the search results since glob patterns don't have a direct way to
     ///    match only root-level files
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// - `exclude_glob: Some(vec!["**/*.json".to_string()])` will exclude all JSON files
     /// - `exclude_glob: Some(vec!["**/test/**/*.rs".to_string()])` will exclude all Rust files in any test directory
     /// - `exclude_glob: Some(vec!["**/node_modules/**".to_string(), "**/.git/**".to_string()])` will exclude
     ///   both node_modules and .git directories and their contents
     /// - `exclude_glob: Some(vec!["**/target/**".to_string()])` will exclude Rust build artifacts
+    /// - `exclude_glob: Some(vec!["src/legacy/**".to_string()])` will exclude files in the specific src/legacy directory
     /// - `exclude_glob: None` means no files will be excluded based on glob patterns
+    ///
+    /// ## Consistency with include_glob
+    ///
+    /// This parameter works consistently with `include_glob` - both use relative paths for pattern matching.
+    /// This allows you to use the same pattern format for both inclusion and exclusion filters.
     pub exclude_glob: Option<Vec<String>>,
 
     /// Optional list of glob patterns for files to include in the search.
@@ -221,7 +237,17 @@ pub struct SearchOptions {
     /// Note: If both `include_glob` and `exclude_glob` are specified, a file will be included only if
     /// it matches at least one include pattern AND doesn't match any exclude pattern.
     ///
-    /// **Important**: Glob patterns are matched against paths that are relative to the search directory.
+    /// ## Path Matching Behavior
+    ///
+    /// **Important**: Glob patterns are matched against paths that are **relative to the search directory**.
+    /// This ensures consistent behavior with `exclude_glob` and makes patterns predictable.
+    ///
+    /// For example, when searching in `/home/user/project`:
+    /// - A file at `/home/user/project/src/main.rs` is matched against the relative path `src/main.rs`
+    /// - A file at `/home/user/project/docs/readme.md` is matched against the relative path `docs/readme.md`
+    ///
+    /// ## Pattern Guidelines
+    ///
     /// To ensure patterns work correctly with directory hierarchies, follow these guidelines:
     ///
     /// 1. To match files in a specific subdirectory at any level, use `**/dirname/**`
@@ -232,13 +258,25 @@ pub struct SearchOptions {
     ///    to filter the search results since glob patterns don't have a direct way to
     ///    match only root-level files
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// - `include_glob: Some(vec!["**/*.rs".to_string()])` will only search Rust files
     /// - `include_glob: Some(vec!["**/src/**".to_string()])` will only search files in any src directory and its subdirectories
     /// - `include_glob: Some(vec!["**/*.rs".to_string(), "**/*.toml".to_string()])` will only search Rust and TOML files
     /// - `include_glob: Some(vec!["**/nested/**".to_string()])` will only search files in directories named "nested" at any level
+    /// - `include_glob: Some(vec!["src/main.rs".to_string()])` will only search the specific src/main.rs file
+    /// - `include_glob: Some(vec!["docs/**/*.md".to_string()])` will only search Markdown files in the docs directory
     /// - `include_glob: None` means all files will be included (subject to other filtering criteria)
+    ///
+    /// ## Consistency with exclude_glob
+    ///
+    /// This parameter works consistently with `exclude_glob` - both use relative paths for pattern matching.
+    /// This allows you to use the same pattern format for both inclusion and exclusion filters.
+    ///
+    /// ## Historical Note
+    ///
+    /// Prior to this consistency fix, `include_glob` used absolute paths while `exclude_glob` used relative paths.
+    /// This inconsistency has been resolved to provide a more intuitive and predictable API.
     pub include_glob: Option<Vec<String>>,
 
     /// Optional path prefix to remove from file paths in search results.
@@ -1586,6 +1624,26 @@ pub fn search_files(
 /// based on the provided options. It uses the generic `traverse_with_callback` function to
 /// efficiently collect matching files.
 ///
+/// ## Path Matching Behavior
+///
+/// Both `include_glob` and `exclude_glob` patterns are matched against **relative paths**
+/// (relative to the search directory) for consistency. When a file is found during traversal:
+///
+/// 1. The absolute path is obtained from the file system walker
+/// 2. The path is converted to relative using `path.strip_prefix(directory)`
+/// 3. Glob patterns are matched against this relative path
+///
+/// This ensures that `include_glob` and `exclude_glob` have consistent behavior and allows
+/// users to write patterns in the same format for both parameters.
+///
+/// ## Example
+///
+/// When searching in `/home/user/project`:
+/// - File `/home/user/project/src/main.rs` becomes relative path `src/main.rs`
+/// - Pattern `**/*.rs` will match this file
+/// - Pattern `src/**` will also match this file
+/// - Pattern `/home/user/project/src/**` will NOT match (no absolute paths)
+///
 /// # Arguments
 ///
 /// * `directory` - The directory path to collect files from
@@ -1613,9 +1671,21 @@ fn collect_files(directory: &Path, options: &SearchOptions) -> Result<Vec<PathBu
         |mut files, path| {
             // If include_glob is specified, only include files that match at least one pattern
             if let Some(include_patterns) = include_glob {
-                // Check if file matches any of the include patterns
+                // IMPORTANT: Convert absolute path to relative path for consistent glob matching
+                // This ensures include_glob works the same way as exclude_glob (which also uses relative paths).
+                //
+                // Example: When searching in "/home/user/project":
+                // - Input path: "/home/user/project/src/main.rs"
+                // - Relative path: "src/main.rs"
+                // - Pattern "**/*.rs" will match against "src/main.rs"
+                //
+                // This consistency fix allows users to write the same pattern format for both
+                // include_glob and exclude_glob, making the API more intuitive.
+                let rel_path = path.strip_prefix(directory).unwrap_or(path);
+                
+                // Check if file matches any of the include patterns using the relative path
                 let is_included =
-                    common::path_matches_any_glob(path, include_patterns, options.case_sensitive)?;
+                    common::path_matches_any_glob(rel_path, include_patterns, options.case_sensitive)?;
 
                 // Only add the file if it matches an include pattern
                 if is_included {

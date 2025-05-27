@@ -223,6 +223,35 @@ This document describes the implementation of the lumin utility, focusing on des
 
 ## Recent Changes
 
+### Fixed include_glob and exclude_glob Consistency Issue
+
+Resolved a critical API inconsistency between `include_glob` and `exclude_glob` pattern matching in the search functionality:
+
+**Problem**: The `include_glob` and `exclude_glob` parameters had different path handling behaviors:
+- `exclude_glob` patterns were matched against relative paths (using `path.strip_prefix(directory)`)
+- `include_glob` patterns were matched against absolute paths (using the full path from `entry.path()`)
+
+This inconsistency caused confusion for users who expected both parameters to work with the same path format.
+
+**Solution**: Modified the `collect_files` function in `search/mod.rs` to make `include_glob` consistent with `exclude_glob`:
+
+```rust
+// Before: include_glob used absolute paths
+let is_included = common::path_matches_any_glob(path, include_patterns, options.case_sensitive)?;
+
+// After: include_glob now uses relative paths like exclude_glob
+let rel_path = path.strip_prefix(directory).unwrap_or(path);
+let is_included = common::path_matches_any_glob(rel_path, include_patterns, options.case_sensitive)?;
+```
+
+**Impact**:
+- Both `include_glob` and `exclude_glob` now work with relative paths consistently
+- Users can use the same pattern format for both parameters
+- No breaking changes - relative patterns continue to work as expected
+- Improved API usability and reduced user confusion
+
+**Testing**: Added comprehensive integration test (`test_include_glob_fix.rs`) to verify the consistent behavior and prevent regressions.
+
 ### Fixed Documentation Style and SearchOptions Structure Compatibility
 
 Implemented fixes to address compatibility issues with the `SearchOptions` struct and improved documentation organization:
