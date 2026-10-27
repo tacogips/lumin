@@ -62,17 +62,17 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1745234285,
-        "narHash": "sha256-GfpyMzxwkfgRVN0cTGQSkTC0OHhEkv3Jf6Tcjm//qZ0=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "c11863f1e964833214b767f4a369c6e6a7aba141",
+        "lastModified": 1793107089,
+        "narHash": "sha256-vrFK95U8Xjtv8QqHSO0bE/okkVk/8XqR956Tg3OWV4Y=",
+        "owner": "tacogips",
+        "repo": "nixpkgs-security",
+        "rev": "4a5495d1c0a7c62200b55deeeecb64f03b093056",
         "type": "github"
       },
       "original": {
-        "owner": "nixos",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
+        "owner": "tacogips",
+        "repo": "nixpkgs-security",
+        "rev": "4a5495d1c0a7c62200b55deeeecb64f03b093056",
         "type": "github"
       }
     },
