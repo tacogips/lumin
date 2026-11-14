@@ -1,0 +1,6 @@
+This is a sample text file.
+It contains some search patterns.
+Find me if you can!
+This line has a PATTERN to match.
+This line has another pattern to find.
+End of sample file.

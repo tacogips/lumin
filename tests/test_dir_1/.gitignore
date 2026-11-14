@@ -1,0 +1,13 @@
+# Test gitignore file
+
+# Ignore temporary files
+*.tmp
+
+# Ignore log files
+*.log
+
+# Ignore hidden directories
+.hidden/
+
+# Ignore build artifacts
+target/

@@ -1,0 +1,4 @@
+# Test gitignore file
+*.tmp
+*.log
+.hidden/
