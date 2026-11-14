@@ -1,0 +1,2 @@
+This is a level 1 nested file.
+It contains some text to be found by traverse function.

@@ -1,0 +1,5 @@
+First line of the file
+Second line of the file
+Third line of the file
+Fourth line of the file
+This line should match the pattern
