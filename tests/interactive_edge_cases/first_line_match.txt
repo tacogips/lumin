@@ -1,0 +1,5 @@
+This line has the PATTERN on the first line
+Second line of the file
+Third line of the file
+Fourth line of the file
+Fifth line of the file
