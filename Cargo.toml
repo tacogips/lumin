@@ -1,0 +1,33 @@
+[package]
+name = "lumin"
+version = "0.1.16"
+edition = "2024"
+description = "A library for searching and displaying local files"
+license = "MIT"
+authors = ["tacogips"]
+
+[lib]
+name = "lumin"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lumin"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.98"
+clap = { version = "4.5.37", features = ["derive"] }
+globset = "0.4.16"
+grep = "0.3.2"
+ignore = "0.4.23"
+infer = "0.19.0"
+log = "0.4.20"
+regex = "1.11.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+env_logger = "0.11.8"
+
+[dev-dependencies]
+serial_test = "2.0.0"
+tempfile = "3.10.0"
+defer = "0.1.0"
